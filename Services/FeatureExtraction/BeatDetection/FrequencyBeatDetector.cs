@@ -144,22 +144,22 @@ public class FrequencyBeatDetector : BeatDetector
         var expectedIntervals = validMeasures
             .GroupBy(s => s.Length)
             .OrderByDescending((group) => group.Count());
-        Console.WriteLine("----------Detection results----------");
-        Console.WriteLine("Detected-BPM,Frequency");
+        // Console.WriteLine("----------Detection results----------");
+        // Console.WriteLine("Detected-BPM,Frequency");
         int total = 0;
         foreach (var group in expectedIntervals)
         {
             var bpm = RescaleBPM((double)(60 / (group.Key * (double)_instantBufferLength / reader.SampleRate)));
-            Console.WriteLine("{0,12:0.##}, {1,7}", (decimal)bpm, group.Count());
+            // Console.WriteLine("{0,12:0.##}, {1,7}", (decimal)bpm, group.Count());
             total += group.Count();
         }
-        Console.WriteLine("Total Intervals: {0,4}", total);
+        // Console.WriteLine("Total Intervals: {0,4}", total);
         var expectedIntervalGroup = expectedIntervals.FirstOrDefault();
         if (expectedIntervalGroup == null)
         {
             return 0;
         }
-        Console.WriteLine("Prediction Confidence: {0:0.00}%", (double)expectedIntervalGroup.Count() / total * 100);
+        // Console.WriteLine("Prediction Confidence: {0:0.00}%", (double)expectedIntervalGroup.Count() / total * 100);
         if ((double)expectedIntervalGroup.Count() / total * 100 < 30 && EnergyThreshold > 25)
         {
             EnergyThreshold -= 25;
