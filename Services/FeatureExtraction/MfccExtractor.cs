@@ -12,7 +12,7 @@ public class MfccExtractor : IFeatureExtractor
     public int NumMelBands { get; set; } = 40; //increase for more dynamic music
     public double LowerFrequencyBound { get; set; } = 300; // Hz
     public double UpperFrequencyBound { get; set; } = 8000; //Hz
-    
+
     public Song ExtractFeature(Song song)
     {
         using (var reader = MusicFileStreamFactory.GetStreamReader(song))
@@ -28,31 +28,31 @@ public class MfccExtractor : IFeatureExtractor
         var hopLength = reader.SampleRate / 100;
         var sampleFrame = reader.ReadBlock(frameLength);
 
-        ConstructMelFilterBands((int)(frameLength / 2 + 1));
+        ConstructMelFilterBands((int)(frameLength / 2 + 1), reader.SampleRate / frameLength);
 
-        while (sampleFrame.Count() != 0)
-        {
-            // Convert to frequency domain by applying windowing function and dft
-            var windowedFrame = ApplyWindow(sampleFrame);
-            var frequencySpectrum = windowedFrame.ToArray();
-            FourierTransformControl.Provider.Forward(frequencySpectrum, FourierTransformScaling.SymmetricScaling);
-            var plt = new ScottPlot.Plot();
-            plt.AddSignal(frequencySpectrum.Select(c => c.Magnitude).ToArray());
-            plt.SaveFig("./Test.png");
+        // while (sampleFrame.Count() != 0)
+        // {
+        //     // Convert to frequency domain by applying windowing function and dft
+        //     var windowedFrame = ApplyWindow(sampleFrame);
+        //     var frequencySpectrum = windowedFrame.ToArray();
+        //     FourierTransformControl.Provider.Forward(frequencySpectrum, FourierTransformScaling.SymmetricScaling);
+        //     // var plt = new ScottPlot.Plot();
+        //     // plt.AddSignal(frequencySpectrum.Select(c => c.Magnitude).ToArray());
+        //     // plt.SaveFig("./Test.png");
 
-            //Discard the upper half of the frequency spectrum due to nyquest sampling
-            frequencySpectrum = frequencySpectrum.Take((int)(frameLength / 2 + 1)).ToArray();
+        //     //Discard the upper half of the frequency spectrum due to nyquest sampling
+        //     frequencySpectrum = frequencySpectrum.Take((int)(frameLength / 2 + 1)).ToArray();
 
-            // Apply log transform to get the log spectrum of the signal
-            var logAmplitudeSpectra = frequencySpectrum.Select(complex => Math.Log10(1 + complex.Magnitude));
+        //     // Apply log transform to get the log spectrum of the signal
+        //     var logAmplitudeSpectra = frequencySpectrum.Select(complex => Math.Log10(1 + complex.Magnitude));
 
-            // Apply mel-filtering 
+        //     // Apply mel-filtering 
 
-            // Apply discrete cosine transforms to get the mfcc
+        //     // Apply discrete cosine transforms to get the mfcc
 
-            reader.Seek(-(frameLength - hopLength), SeekOrigin.Current);
-            sampleFrame = reader.ReadBlock(frameLength);
-        }
+        //     reader.Seek(-(frameLength - hopLength), SeekOrigin.Current);
+        //     sampleFrame = reader.ReadBlock(frameLength);
+        // }
 
         return new List<double[]>() { new double[] { 1.0 } };
     }
@@ -76,16 +76,22 @@ public class MfccExtractor : IFeatureExtractor
         return 700 * (Math.Pow(10, mel / 2595) - 1);
     }
 
-    private void ConstructMelFilterBands(int numSamples)
+    private void ConstructMelFilterBands(int numSamples, double frequencyStep)
     {
         var (lowerMel, upperMel) = (FrequencyToMel(LowerFrequencyBound), FrequencyToMel(UpperFrequencyBound));
         var centreMelBands = Generate.LinearSpaced(NumMelBands, lowerMel, upperMel);
         var melStep = centreMelBands[1] - centreMelBands[0];
         var startFreq = MelToFrequency(centreMelBands[0] - melStep);
         var endFreq = MelToFrequency(centreMelBands[NumMelBands - 1] + melStep);
+        // Need to round down centre frequencies to discrete steps posiitoned on the sample spectrum.
+        var centreFrequencies = centreMelBands
+            .Select(mel => MelToFrequency(mel) - MelToFrequency(mel) % frequencyStep).ToList();
+        Console.WriteLine(frequencyStep);
+        foreach (var centrefreq in centreFrequencies)
+        {
+            Console.WriteLine(centrefreq);
+        }
 
-        var centreFrequencies = centreMelBands.Select(mel => MelToFrequency(mel)).ToList();
-        // Need to round centre frequencies to discrete steps posiitoned on the sample spectrum.
 
 
         var MelFilter = Matrix<double>.Build.Dense(NumMelBands, numSamples);
@@ -94,19 +100,35 @@ public class MfccExtractor : IFeatureExtractor
         {
             var lower = i == 0 ? startFreq : centreFrequencies[i - 1];
             var upper = i == NumMelBands - 1 ? endFreq : centreFrequencies[i + 1];
-            var filter = ConstructSingleMelBand(lower, centreFrequencies[i], upper, frameSize / 2 + 1);
-            plt.AddScatter(Generate.LinearSpaced(filter.Count, lower, upper).ToArray(), filter.ToArray(), markerSize: 0);
+            var filter = ConstructSingleMelBand(lower, centreFrequencies[i], upper, frequencyStep, numSamples);
+            plt.AddSignal(filter);
         }
         plt.SaveFig("./MelFilter.png");
 
     }
 
-    private List<double> ConstructSingleMelBand(double lower, double centre, double upper, int filterSize)
+    private double[] ConstructSingleMelBand(double lowerFreq, double centreFreq, double upperFreq,
+        double freqStep, int filterSize)
     {
-        var step = (upper - lower) / filterSize;
-        var lowerCoeff = Generate.LinearRange(lower, step, centre).ToList();
-        var upperCoeff = Generate.LinearRange(centre, step, upper).ToList();
-        return lowerCoeff.Concat(upperCoeff).ToList();
+        var filter = new double[filterSize];
+        for (var index = 0; index < filterSize; index++)
+        {
+            var currFrequency = index * freqStep;
+            if (currFrequency > lowerFreq && currFrequency <= centreFreq)
+            {
+                filter[index] = (currFrequency - lowerFreq) / (centreFreq - lowerFreq);
+            }
+            else if (currFrequency > centreFreq && currFrequency <= upperFreq)
+            {
+                filter[index] = (upperFreq - currFrequency) / (upperFreq - centreFreq);
+            }
+            else
+            {
+                filter[index] = 0;
+            }
+        }
+
+        return filter;
     }
 
 }
