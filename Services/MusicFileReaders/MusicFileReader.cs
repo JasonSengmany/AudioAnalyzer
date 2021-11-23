@@ -28,6 +28,9 @@ public interface IMusicFileStream : IDisposable
     //   T:System.ArgumentOutOfRangeException:
     //     The length of value is less than 2.
     List<float[]> ReadBlock(int blockLength);
+
+    //Returns all data samples
+    List<float[]> ReadAll();
     void PlayAudio();
     void PlayAudioAndDisplayBeat(int bpm);
     void Seek(long offset, SeekOrigin origin);
@@ -140,6 +143,11 @@ public class WaveFileStream : IMusicFileStream
     public void Dispose()
     {
         _reader.Dispose();
+    }
+
+    public List<float[]> ReadAll()
+    {
+        return ReadBlock((int)_reader.SampleCount);
     }
 }
 
@@ -280,6 +288,11 @@ public class FlacFileStream : IMusicFileStream
     {
         _reader.Dispose();
     }
+
+    public List<float[]> ReadAll()
+    {
+        return ReadBlock((int)(_reader.Length / (_reader.WaveFormat.Channels * _reader.WaveFormat.BitsPerSample / 8.0)));
+    }
 }
 
 public class MP3FileStream : IMusicFileStream
@@ -398,5 +411,10 @@ public class MP3FileStream : IMusicFileStream
     public void Dispose()
     {
         _reader.Dispose();
+    }
+
+    public List<float[]> ReadAll()
+    {
+        return ReadBlock((int)(_reader.Length / (_reader.WaveFormat.Channels * _reader.WaveFormat.BitsPerSample / 8.0)));
     }
 }

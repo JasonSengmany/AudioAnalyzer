@@ -15,9 +15,6 @@ if (!File.Exists(args[0]))
 }
 
 var pipe = new FeatureExtractionPipeline();
-pipe.Load(new FrequencyBeatDetector());
-pipe.Load(new ZeroCrossingRateExtractor());
-pipe.Load(new RootMeanSquareExtractor());
 pipe.Load(new MfccExtractor());
 var song = new Song(args[0]);
 pipe.Process(song);
