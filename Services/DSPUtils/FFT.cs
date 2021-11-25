@@ -68,5 +68,27 @@ internal sealed class FourierTransform
         }
         return output;
     }
+    public static List<List<T>> PartitionToFrames<T>(List<T> musicData, int frameLength, int hopLength)
+    {
+        var partitions = new List<List<T>>();
+        for (var offset = 0; offset < musicData.Count() - frameLength; offset += hopLength)
+        {
+            partitions.Add(musicData.Skip(offset).Take(frameLength).ToList());
+        }
+        return partitions;
+    }
 
+    public static int GetNextPowerof2(int frameLength)
+    {
+        var filterLength = 0;
+        if ((frameLength & (frameLength - 1)) == 0)
+        {
+            filterLength = frameLength;
+        }
+        else
+        {
+            filterLength = (int)(Math.Pow(2, (int)(Math.Log2(frameLength)) + 1));
+        }
+        return filterLength;
+    }
 }

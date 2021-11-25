@@ -39,15 +39,7 @@ public class MfccExtractor : IFeatureExtractor
         // A filter matrix is formed of size (NumMelBands x (FFT Output Length/2+1)) 
         // (Note the second parameter is found by finding the upper power of 2 bound of frameLength, 
         // Then dividing by 2 due to nyquist sampling and adding 1)
-        var filterLength = 0;
-        if ((frameLength & (frameLength - 1)) == 0)
-        {
-            filterLength = frameLength / 2 + 1;
-        }
-        else
-        {
-            filterLength = (int)(Math.Pow(2, (int)(Math.Log2(frameLength)) + 1) / 2 + 1);
-        }
+        var filterLength = FourierTransform.GetNextPowerof2(frameLength) / 2 + 1;
         var melFilter = ConstructMelFilterBands(filterLength, (double)reader.SampleRate / frameLength);
 
         var mfccs = new List<double[]>();
