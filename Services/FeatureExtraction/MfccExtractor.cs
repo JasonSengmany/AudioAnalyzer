@@ -9,6 +9,8 @@ using AudioAnalyser.DSPUtils;
 public class MfccExtractor : IFeatureExtractor
 {
     public int NumMelBands { get; set; } = 64; //increase for more dynamic music
+
+    public int NumMfccs { get; set; } = 30; // Number of Mfccs to retain
     public double LowerFrequencyBound { get; set; } = 300; // Hz
     public double UpperFrequencyBound { get; set; } = 8000; //Hz
 
@@ -21,38 +23,63 @@ public class MfccExtractor : IFeatureExtractor
         return song;
     }
 
+    // MFCC definition based off article : 
+    // https://vitolavecchia.altervista.org/mel-frequency-cepstral-coefficient-mfcc-guidebook/
     private List<double[]> GetMFCC(IMusicFileStream reader)
     {
-        var frameLength = 1024;
-        var hopLength = reader.SampleRate / 100;
+        // Calculate initial framing parameters to partition the signal
+        var frameLength = (int)(reader.SampleRate * 0.025); // 25ms frame length
+        var hopLength = (int)(reader.SampleRate * 0.01);    //10ms hop length
+
+        // Obtain sample frames of the music data.
         var musicData = reader.ReadAll();
         var sampleFrames = PartitionToFrames(musicData, frameLength, hopLength);
 
-        var melFilter = ConstructMelFilterBands((int)(frameLength / 2 + 1), (double)reader.SampleRate / frameLength);
+        // Construct the mel filter bank based on the number of melbands specified in the NumMelBands property
+        // A filter matrix is formed of size (NumMelBands x (FFT Output Length/2+1)) 
+        // (Note the second parameter is found by finding the upper power of 2 bound of frameLength, 
+        // Then dividing by 2 due to nyquist sampling and adding 1)
+        var filterLength = 0;
+        if ((frameLength & (frameLength - 1)) == 0)
+        {
+            filterLength = frameLength / 2 + 1;
+        }
+        else
+        {
+            filterLength = (int)(Math.Pow(2, (int)(Math.Log2(frameLength)) + 1) / 2 + 1);
+        }
+        var melFilter = ConstructMelFilterBands(filterLength, (double)reader.SampleRate / frameLength);
+
         var mfccs = new List<double[]>();
-        var spectrogram = Matrix<double>.Build.Dense(sampleFrames.Count(), (int)(frameLength / 2 + 1));
+
         foreach (var frame in sampleFrames)
         {
-            // Convert to frequency domain by applying windowing function and dft
+            // Convert to frequency domain by applying windowing function and dft (Short-time fourier transforms)
             var windowedFrame = ApplyWindow(frame);
-            var frequencySpectrum = windowedFrame.ToArray();
-            var result = FourierTransform.Radix2FFT(frequencySpectrum);
-            //Discard the upper half of the frequency spectrum due to nyquest sampling
-            frequencySpectrum = frequencySpectrum.Take((int)(frameLength / 2 + 1)).ToArray();
+            var frequencySpectrum = FourierTransform.Radix2FFT(windowedFrame.ToArray());
+            // FourierTransformControl.Provider.Forward(frequencySpectrum, FourierTransformScaling.SymmetricScaling);
 
-            // Apply log transform to get the log spectrum of the signal
-            var logAmplitudeSpectra = frequencySpectrum.Select(complex => Math.Log10(1 + complex.Magnitude));
+            //Discard the upper half of the frequency spectrum due to nyquest sampling
+            frequencySpectrum = frequencySpectrum.Take(frequencySpectrum.Count() / 2 + 1).ToArray();
+
+            // Obtain the periodogram estimate of the power spectrum
+            var powerSpectrum = frequencySpectrum.Select(
+                val => 1.0 / frequencySpectrum.Count() * Math.Pow(val.Magnitude, 2)).ToArray();
+
 
             // Apply mel-filtering using matrix multiplication with filterbank 
-            var logAmplitudeSpectraVector = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(logAmplitudeSpectra.ToArray());
-            var filteredLogAmplitudeSpectrum = melFilter.Multiply(logAmplitudeSpectraVector);
+            var powerSpectrumVector = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(powerSpectrum);
+            var melFilteredPowerSpectrum = melFilter.Multiply(powerSpectrumVector);
 
-            // Apply discrete cosine transform
-            var dctResult = filteredLogAmplitudeSpectrum.ToArray();
+            // Take the log of the mel-fitered powers
+            var logFilteredPowerSpectrum = melFilteredPowerSpectrum.Select(x => Math.Log10(1 + x));
+
+            // Apply discrete cosine transform to return the MFCCs and only keep the lower coefficients
+            var dctResult = logFilteredPowerSpectrum.ToArray();
             FastDctLee.Transform(dctResult);
-            mfccs.Add(dctResult);
-        }
 
+            mfccs.Add(dctResult.Take(NumMfccs).ToArray());
+        }
 
         return mfccs;
     }
@@ -60,7 +87,7 @@ public class MfccExtractor : IFeatureExtractor
     private List<List<float[]>> PartitionToFrames(List<float[]> musicData, int frameLength, int hopLength)
     {
         var partitions = new List<List<float[]>>();
-        for (var offset = 0; offset < musicData.Count() - hopLength; offset += hopLength)
+        for (var offset = 0; offset < musicData.Count() - frameLength; offset += hopLength)
         {
             partitions.Add(musicData.Skip(offset).Take(frameLength).ToList());
         }
@@ -98,16 +125,13 @@ public class MfccExtractor : IFeatureExtractor
             .Select(mel => MelToFrequency(mel) - MelToFrequency(mel) % frequencyStep).ToList();
 
         var melFilter = Matrix<double>.Build.Dense(NumMelBands, numSamples);
-        var plt = new ScottPlot.Plot();
         for (var i = 0; i < NumMelBands; ++i)
         {
             var lower = i == 0 ? startFreq : centreFrequencies[i - 1];
             var upper = i == NumMelBands - 1 ? endFreq : centreFrequencies[i + 1];
             var filter = ConstructSingleMelBand(lower, centreFrequencies[i], upper, frequencyStep, numSamples);
             melFilter.SetRow(i, filter);
-            plt.AddSignal(filter);
         }
-        plt.SaveFig("./MelFilter.png");
         return melFilter;
 
     }

@@ -22,7 +22,7 @@
  */
 
 using System;
-
+using System.Numerics;
 namespace AudioAnalyser.DSPUtils;
 internal sealed class FastDctLee
 {
@@ -111,4 +111,13 @@ internal sealed class FastDctLee
         }
     }
 
+
+    // public static double[] DiscreteCosineTransform(double[] signal)
+    // {
+    //     var y = new double[signal.Length * 2];
+    //     Array.Fill(y, 0);
+    //     signal.CopyTo(y, 0);
+    //     var Y = FourierTransform.Radix2FFT(y);
+
+    // }
 }

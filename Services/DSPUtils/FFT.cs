@@ -23,6 +23,11 @@ internal sealed class FourierTransform
             return FFTBody(paddedSignal).Select(x => x / Math.Sqrt(paddedSignal.Length)).ToArray();
         }
     }
+
+    public static Complex[] Radix2FFT(double[] signal)
+    {
+        return Radix2FFT(signal.Select(x => new Complex(x, 0)).ToArray());
+    }
     private static Complex[] FFTBody(Complex[] signal)
     {
         var n = signal.Length;
