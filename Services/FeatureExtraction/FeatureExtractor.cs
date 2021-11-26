@@ -15,7 +15,7 @@ public class FeatureExtractionPipeline
     {
         foreach (var featurizer in _featurizers)
         {
-            song = featurizer.ExtractFeature(song);
+            featurizer.ExtractFeature(song);
         }
         return song;
     }

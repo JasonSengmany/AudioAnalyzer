@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using AudioAnalyser.FeatureExtraction;
+﻿using AudioAnalyser.FeatureExtraction;
 using AudioAnalyser.Models;
 
 if (args.Count() != 1)
@@ -15,37 +14,27 @@ if (!File.Exists(args[0]))
 }
 
 var pipe = new FeatureExtractionPipeline();
-// pipe.Load(new MfccExtractor());
-// pipe.Load(new BasicEnvelopeDetector());
-pipe.Load(new BandEnergyRatioExtractor());
+pipe.Load(new MfccExtractor(),
+    new FrequencyBeatDetector(),
+    new BasicEnvelopeDetector(),
+    new FrequecySpectrogramExtractor(),
+    new BandEnergyRatioExtractor(),
+    new ZeroCrossingRateExtractor(),
+    new SpectralCentroidExtractor());
+
 var song = new Song(args[0]);
 pipe.Process(song);
+
+// Display f
+var plt = new ScottPlot.Plot();
+plt.AddSignal(song.ZeroCrossingRates.ToArray());
+plt.SaveFig("./ZCR.png");
 Console.WriteLine(song);
 
-// //Using dependency injection to resolve music file reader.
-// var services = new ServiceCollection();
-
-// Func<IServiceProvider, IMusicFileStream> readerFactory = Path.GetExtension(args[0]).ToLower() switch
-// {
-//     ".flac" => (_) => new FlacFileStream(args[0]),
-//     ".wav" => (_) => new WaveFileStream(args[0]),
-//     ".mp3" => (_) => new MP3FileStream(args[0]),
-//     _ => throw new ArgumentException("File type not supported")
-// };
 
 
-// services.AddScoped<IMusicFileStream>(readerFactory);
 
-// services.AddSingleton<BeatDetector, FrequencyBeatDetector>((serviceProvider) =>
-//     new FrequencyBeatDetector()
-//     {
-//         SubbandWidthConstantA = 0.1
-//     }
-// );
 
-// services.AddSingleton<ZeroCrossingRateExtractor>();
-
-// var serviceProvider = services.BuildServiceProvider();
 
 
 

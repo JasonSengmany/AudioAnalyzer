@@ -2,7 +2,6 @@ using System.Numerics;
 using AudioAnalyser.FeatureExtraction;
 using AudioAnalyser.Models;
 using AudioAnalyser.MusicFileReader;
-using MathNet.Filtering.Windowing;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
 using AudioAnalyser.DSPUtils;
@@ -12,7 +11,7 @@ public class MfccExtractor : IFeatureExtractor
 
     public int NumMfccs { get; set; } = 30; // Number of Mfccs to retain
     public double LowerFrequencyBound { get; set; } = 300; // Hz
-    public double UpperFrequencyBound { get; set; } = 8000; //Hz
+    public double UpperFrequencyBound { get; set; } = 10000; //Hz
 
     public Song ExtractFeature(Song song)
     {
@@ -32,8 +31,10 @@ public class MfccExtractor : IFeatureExtractor
         var hopLength = (int)(reader.SampleRate * 0.01);    //10ms hop length
 
         // Obtain sample frames of the music data.
-        var musicData = reader.ReadAll();
-        var sampleFrames = PartitionToFrames(musicData, frameLength, hopLength);
+        var musicData = reader.ReadAll().Select(channelData => new Complex(channelData[0], channelData[1])).ToList();
+        var sampleFrames = FourierTransform.PartitionToFrames(musicData, frameLength, hopLength);
+
+        var hammingWindow = new HammingWindow();
 
         // Construct the mel filter bank based on the number of melbands specified in the NumMelBands property
         // A filter matrix is formed of size (NumMelBands x (FFT Output Length/2+1)) 
@@ -42,12 +43,12 @@ public class MfccExtractor : IFeatureExtractor
         var filterLength = FourierTransform.GetNextPowerof2(frameLength) / 2 + 1;
         var melFilter = ConstructMelFilterBands(filterLength, (double)reader.SampleRate / frameLength);
 
-        var mfccs = new List<double[]>();
+        var mfccs = new List<double[]>(sampleFrames.Count());
 
         foreach (var frame in sampleFrames)
         {
             // Convert to frequency domain by applying windowing function and dft (Short-time fourier transforms)
-            var windowedFrame = ApplyWindow(frame);
+            var windowedFrame = hammingWindow.ApplyWindow(frame);
             var frequencySpectrum = FourierTransform.Radix2FFT(windowedFrame.ToArray());
             // FourierTransformControl.Provider.Forward(frequencySpectrum, FourierTransformScaling.SymmetricScaling);
 
@@ -76,24 +77,6 @@ public class MfccExtractor : IFeatureExtractor
         return mfccs;
     }
 
-    private List<List<float[]>> PartitionToFrames(List<float[]> musicData, int frameLength, int hopLength)
-    {
-        var partitions = new List<List<float[]>>();
-        for (var offset = 0; offset < musicData.Count() - frameLength; offset += hopLength)
-        {
-            partitions.Add(musicData.Skip(offset).Take(frameLength).ToList());
-        }
-        return partitions;
-    }
-
-    private List<Complex> ApplyWindow(List<float[]> sampleFrame)
-    {
-        var window = new HammingWindow() { Width = sampleFrame.Count() };
-        window.Precompute();
-        return sampleFrame.Zip(window.CopyToArray(),
-                            (values, coeff) => new Complex(values[0] * coeff, values[1] * coeff))
-                            .ToList();
-    }
 
     private double FrequencyToMel(double frequency)
     {
