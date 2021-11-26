@@ -6,9 +6,13 @@ using AudioAnalyser.MusicFileReader;
 
 public class FrequecySpectrogramExtractor : IFeatureExtractor
 {
-    public int FrameSize { get; set; } = 2048;
-    public int HopLength { get; set; } = 512;
+    public int FrameSize { get; set; }
+    public int HopLength { get; set; }
     public WindowFunction window { get; set; } = new HammingWindow();
+
+    public FrequecySpectrogramExtractor(int frameSize = 2048, int hopLength = 512)
+        => (FrameSize, HopLength) = (frameSize, hopLength);
+
     public Song ExtractFeature(Song song)
     {
         using (var reader = MusicFileStreamFactory.GetStreamReader(song))
@@ -22,7 +26,6 @@ public class FrequecySpectrogramExtractor : IFeatureExtractor
 
     private List<Complex[]> GetSpectrogram(IMusicFileStream reader)
     {
-
         var musicData = reader.ReadAll()
             .Select(channelData => new Complex(channelData[0], channelData[1])).ToList();
         var sampleFrames = FourierTransform.PartitionToFrames(musicData, FrameSize, HopLength);

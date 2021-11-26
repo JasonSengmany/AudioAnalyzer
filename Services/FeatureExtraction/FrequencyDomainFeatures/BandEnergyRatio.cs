@@ -13,8 +13,10 @@ public class BandEnergyRatioExtractor : IFeatureExtractor
     /// <summary>
     /// This value indicates the division between the higher and lower frequencies used in the BER calculation.
     /// </summary>
-    /// <value>A default of 1000Hz is provided which is found in the lower midrange</value>
-    public float SplitFrequencyHz { get; set; } = 1000;
+    /// <value>A default of 1000Hz is provided which is found in the lower midrange where vocals may appear</value>
+    public float SplitFrequencyHz { get; set; }
+
+    public BandEnergyRatioExtractor(float splitFrequency = 1000) => SplitFrequencyHz = splitFrequency;
 
     /// <summary>
     /// Extracts the band energy ratio and stores it in the property <c>song.BandEnergyRatios</c>
