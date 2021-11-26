@@ -1,6 +1,10 @@
 using System;
 
 namespace AudioAnalyser.FeatureExtraction;
+
+/// <summary>
+/// Thrown when an error with the feature pipeline configuration occurs
+/// </summary>
 public class FeaturePipelineException : Exception
 {
     public FeaturePipelineException()

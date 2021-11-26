@@ -2,16 +2,23 @@ using System.Numerics;
 
 namespace AudioAnalyser.Models;
 
+
+/// <summary>
+/// Model <c>Song</c> used to store all possible extracted features. 
+/// </summary>
 public record Song
 {
     public string FilePath { get; init; } = String.Empty;
 
-    //Temporal Features
+    /// <value>Total running time of the song</value>
     public TimeSpan TotalTime { get; internal set; }
+
+    /// <value>Estimate of the song's beats per minute set by class <c>BeatDetector</c></value>
     public int BeatsPerMinute { get; internal set; }
+
+    /// <value>Zero crossing rate for each frame partitioned by class <c>ZeroCrossingRateExtractor</c></value>
     public List<double> ZeroCrossingRates { get; internal set; }
 
-    // Songs that are noisy and have large fluctuations in pitch have higher ZCR
     public double? AverageZeroCrossingRate => ZeroCrossingRates?.Average();
     public List<double> RootMeanSquares { get; internal set; }
     public double? AverageRootMeanSquare => RootMeanSquares?.Average();
@@ -19,15 +26,12 @@ public record Song
     public float? AverageEnvelope => AmplitudeEnvelope?.Average();
 
 
-    //Frequency domain features
-
-    // Frequency spectrogram consisting of (timeStep, frequencyStep, spectrums for each frame)
     internal double TimeStep { get; set; }
     internal double FrequencyStep { get; set; }
     public List<Complex[]> Spectrogram { get; internal set; }
-    public List<double> BandEnergyRatio { get; internal set; }
+    public List<double> BandEnergyRatios { get; internal set; }
     // Vocals typically have < 100 Average BER while electronic music have > 120
-    public double? AverageBandEnergyRatio => BandEnergyRatio?.Average();
+    public double? AverageBandEnergyRatio => BandEnergyRatios?.Average();
 
     public List<double> SpectralCentroids { get; internal set; }
     public double? AverageSpectralCentroid => SpectralCentroids?.Average();

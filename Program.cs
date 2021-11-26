@@ -13,22 +13,21 @@ if (!File.Exists(args[0]))
     return -1;
 }
 
+// Example pipeline created to extract features from a song
 var pipe = new FeatureExtractionPipeline();
-pipe.Load(new MfccExtractor(),
+pipe.Load(
     new FrequencyBeatDetector(),
     new BasicEnvelopeDetector(),
+    new ZeroCrossingRateExtractor(),
+    new RootMeanSquareExtractor(),
     new FrequecySpectrogramExtractor(),
     new BandEnergyRatioExtractor(),
-    new ZeroCrossingRateExtractor(),
-    new SpectralCentroidExtractor());
+    new SpectralCentroidExtractor(),
+    new MfccExtractor()
+);
 
 var song = new Song(args[0]);
 pipe.Process(song);
-
-// Display f
-var plt = new ScottPlot.Plot();
-plt.AddSignal(song.ZeroCrossingRates.ToArray());
-plt.SaveFig("./ZCR.png");
 Console.WriteLine(song);
 
 

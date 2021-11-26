@@ -15,7 +15,7 @@ public class FrequecySpectrogramExtractor : IFeatureExtractor
         {
             song.Spectrogram = GetSpectrogram(reader);
             song.TimeStep = (double)HopLength / reader.SampleRate;
-            song.FrequencyStep = reader.SampleRate / FrameSize;
+            song.FrequencyStep = (double)reader.SampleRate / FrameSize;
         }
         return song;
     }

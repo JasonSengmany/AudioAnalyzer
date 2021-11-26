@@ -1,63 +1,76 @@
 using System.Numerics;
-using AudioAnalyser.FeatureExtraction;
 using AudioAnalyser.Models;
-using AudioAnalyser.MusicFileReader;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
 using AudioAnalyser.DSPUtils;
+
+namespace AudioAnalyser.FeatureExtraction;
+/// <summary>
+/// Class <c>MfccExtractor</c> is used to extract mel-frequency cepstral coefficients from a <c>Song</c>
+/// </summary>
 public class MfccExtractor : IFeatureExtractor
 {
-    public int NumMelBands { get; set; } = 64; //increase for more dynamic music
+    /// <value> Property <c>NumMelBands</c> represents the number of mel-scaled frequency bins
+    /// This dicates the number of mels used when constructing the mel-filter bank</value>
+    public int NumMelBands { get; set; }
 
-    public int NumMfccs { get; set; } = 30; // Number of Mfccs to retain
-    public double LowerFrequencyBound { get; set; } = 300; // Hz
-    public double UpperFrequencyBound { get; set; } = 10000; //Hz
+    /// <value> Property <c>NumMfccs</c> represents the number of mfccs to store 
+    /// after discrete cosine transformation</value>
+    public int NumMfccs { get; set; }
 
+    /// <value> Property <c>LowerFrequencyBound</c> represents the lower frequency bound in Hz of 
+    /// the mel-filter bank</value>
+    public double LowerFrequencyBound { get; set; }
+
+    /// <value> Property <c>LowerFrequencyBound</c> represents the lower frequency bound in Hz of 
+    /// the mel-filter bank</value>
+    public double UpperFrequencyBound { get; set; }
+
+    /// <summary>
+    /// This constructor provides default values for the classes properties if not provided, based on generally 
+    /// used audio processing parameters.
+    /// </summary>
+    public MfccExtractor(int numMfccs = 30, int numMelBands = 64, double lowerFrequencyBound = 300,
+        double upperFrequencyBound = 10000)
+        => (NumMfccs, NumMelBands, LowerFrequencyBound, UpperFrequencyBound) = (numMfccs, numMelBands, lowerFrequencyBound, upperFrequencyBound);
+
+    /// <summary>
+    /// Exctracts the MFCC from the <c>song</c> and stores it within <c>song.MFCC<c>
+    /// </summary>
+    /// <param name="song">Song to be processed</param>
+    /// <exception cref="FeaturePipelineException"></exception>
+    /// <returns>Reference to the input parameter with the MFCC property set</returns>
     public Song ExtractFeature(Song song)
     {
-        using (var reader = MusicFileStreamFactory.GetStreamReader(song))
+        if (song.Spectrogram == null)
         {
-            song.MFCC = GetMFCC(reader);
+            throw new FeaturePipelineException("Spectrogram is required to extract MFCCs");
         }
+        song.MFCC = GetMFCC(song.Spectrogram, song.FrequencyStep);
         return song;
     }
 
-    // MFCC definition based off article : 
-    // https://vitolavecchia.altervista.org/mel-frequency-cepstral-coefficient-mfcc-guidebook/
-    private List<double[]> GetMFCC(IMusicFileStream reader)
+    /// <summary>
+    /// This method extracts the MFCCs based on the definition provided in article:
+    /// https://vitolavecchia.altervista.org/mel-frequency-cepstral-coefficient-mfcc-guidebook/
+    /// </summary>
+    /// <param name="spectrogram">A list of frequency spectrums for each frame in the song</param>
+    /// <param name="frequencyStep">The frequency step used in the spectrogram</param>
+    /// <returns>A list of MFCCs for each frame found in the spectrogram</returns>
+    private List<double[]> GetMFCC(List<Complex[]> spectrogram, double frequencyStep)
     {
-        // Calculate initial framing parameters to partition the signal
-        var frameLength = (int)(reader.SampleRate * 0.025); // 25ms frame length
-        var hopLength = (int)(reader.SampleRate * 0.01);    //10ms hop length
 
-        // Obtain sample frames of the music data.
-        var musicData = reader.ReadAll().Select(channelData => new Complex(channelData[0], channelData[1])).ToList();
-        var sampleFrames = FourierTransform.PartitionToFrames(musicData, frameLength, hopLength);
+        var filterLength = spectrogram.First().Count();
+        var melFilter = ConstructMelFilterBands(filterLength, frequencyStep);
 
-        var hammingWindow = new HammingWindow();
+        var mfccs = new List<double[]>(spectrogram.Count());
 
-        // Construct the mel filter bank based on the number of melbands specified in the NumMelBands property
-        // A filter matrix is formed of size (NumMelBands x (FFT Output Length/2+1)) 
-        // (Note the second parameter is found by finding the upper power of 2 bound of frameLength, 
-        // Then dividing by 2 due to nyquist sampling and adding 1)
-        var filterLength = FourierTransform.GetNextPowerof2(frameLength) / 2 + 1;
-        var melFilter = ConstructMelFilterBands(filterLength, (double)reader.SampleRate / frameLength);
-
-        var mfccs = new List<double[]>(sampleFrames.Count());
-
-        foreach (var frame in sampleFrames)
+        foreach (var frame in spectrogram)
         {
-            // Convert to frequency domain by applying windowing function and dft (Short-time fourier transforms)
-            var windowedFrame = hammingWindow.ApplyWindow(frame);
-            var frequencySpectrum = FourierTransform.Radix2FFT(windowedFrame.ToArray());
-            // FourierTransformControl.Provider.Forward(frequencySpectrum, FourierTransformScaling.SymmetricScaling);
-
-            //Discard the upper half of the frequency spectrum due to nyquest sampling
-            frequencySpectrum = frequencySpectrum.Take(frequencySpectrum.Count() / 2 + 1).ToArray();
 
             // Obtain the periodogram estimate of the power spectrum
-            var powerSpectrum = frequencySpectrum.Select(
-                val => 1.0 / frequencySpectrum.Count() * Math.Pow(val.Magnitude, 2)).ToArray();
+            var powerSpectrum = frame.Select(
+                val => 1.0 / frame.Count() * Math.Pow(val.Magnitude, 2)).ToArray();
 
 
             // Apply mel-filtering using matrix multiplication with filterbank 
@@ -77,17 +90,35 @@ public class MfccExtractor : IFeatureExtractor
         return mfccs;
     }
 
-
+    /// <summary>
+    /// Converts from Hz to mels
+    /// </summary>
+    /// <param name="frequency">Frequency to convert in Hz</param>
+    /// <returns>mel-scaled frequency</returns>
     private double FrequencyToMel(double frequency)
     {
         return 2595 * Math.Log10(1 + frequency / 700);
     }
 
+    /// <summary>
+    /// Converts from mels to Hz
+    /// </summary>
+    /// <param name="mel">Mel to convert to Hz</param>
+    /// <returns>Frequency in Hz</returns>
     private double MelToFrequency(double mel)
     {
         return 700 * (Math.Pow(10, mel / 2595) - 1);
     }
 
+    /// <summary>
+    /// Constructs a mel-filter bank as a list of triangular filters centred at equally spaced mels 
+    /// between the mel-scaled properties <c>LowerFrequencyBound</c> and <c>UpperFrequencyBound</c>
+    /// </summary>
+    /// <param name="numSamples">The filter length determined by the number of samples in the frequency 
+    /// spectrum to be filtered</param>
+    /// <param name="frequencyStep">The frequency step between successive points in the frequency 
+    /// spectrum to be filtered</param>
+    /// <returns>Mel-filter bank matrix of size (<c>NumMelBands</c>,<c>numSamples)</c></returns>
     private Matrix<double> ConstructMelFilterBands(int numSamples, double frequencyStep)
     {
         var (lowerMel, upperMel) = (FrequencyToMel(LowerFrequencyBound), FrequencyToMel(UpperFrequencyBound));
@@ -111,6 +142,15 @@ public class MfccExtractor : IFeatureExtractor
 
     }
 
+    /// <summary>
+    /// This method creates a single triangular filter which makes up the mel-filter bank
+    /// </summary>
+    /// <param name="lowerFreq"></param>
+    /// <param name="centreFreq"></param>
+    /// <param name="upperFreq"></param>
+    /// <param name="freqStep"></param>
+    /// <param name="filterSize"></param>
+    /// <returns>Single row of the mel filter bank</returns>
     private double[] ConstructSingleMelBand(double lowerFreq, double centreFreq, double upperFreq,
         double freqStep, int filterSize)
     {
