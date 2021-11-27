@@ -11,7 +11,8 @@ internal sealed class FourierTransform
     {
         if ((signal.Length & (signal.Length - 1)) == 0)
         {
-            return FFTBody(signal).Select(x => x / Math.Sqrt(signal.Length)).ToArray();
+            var normFactor = Math.Sqrt(signal.Length);
+            return FFTBody(signal).Select(x => x / normFactor).ToArray();
 
         }
         else
@@ -20,7 +21,8 @@ internal sealed class FourierTransform
             var paddedSignal = new Complex[(int)nextPowerOf2];
             Array.Fill(paddedSignal, Complex.Zero);
             signal.CopyTo(paddedSignal, 0);
-            return FFTBody(paddedSignal).Select(x => x / Math.Sqrt(paddedSignal.Length)).ToArray();
+            var normFactor = Math.Sqrt(paddedSignal.Length);
+            return FFTBody(paddedSignal).Select(x => x / normFactor).ToArray();
         }
     }
 
@@ -33,10 +35,8 @@ internal sealed class FourierTransform
         var n = signal.Length;
         if (n == 1) return signal;
 
-        var A0 = signal.Where((val, index) => index % 2 == 0).ToArray();
-        var A1 = signal.Where((val, index) => index % 2 == 1).ToArray();
-        var y0 = FFTBody(A0);
-        var y1 = FFTBody(A1);
+        var y0 = FFTBody(signal.Where((val, index) => index % 2 == 0).ToArray());
+        var y1 = FFTBody(signal.Where((val, index) => index % 2 == 1).ToArray());
 
         var wn = Complex.Exp(new Complex(0, -2 * Math.PI / n));
         var w = Complex.One;

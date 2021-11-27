@@ -5,8 +5,8 @@ namespace AudioAnalyser.FeatureExtraction;
 
 public abstract class BeatDetector : IFeatureExtractor
 {
-    protected const int _instantBufferLength = 1024;
-    protected const int _historyBufferLength = 43;
+    protected int _instantBufferLength = 1024;
+    protected int _historyBufferLength = 43;
 
     public string BeatString { get; protected set; } = String.Empty;
 

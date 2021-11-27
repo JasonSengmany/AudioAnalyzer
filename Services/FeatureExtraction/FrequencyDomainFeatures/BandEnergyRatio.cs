@@ -45,7 +45,7 @@ public class BandEnergyRatioExtractor : IFeatureExtractor
     {
         //Determine split index for given sample rate
         var splitIndex = (int)Math.Floor(SplitFrequencyHz / frequencyStep);
-        var bandEnergyRatios = new List<double>();
+        var bandEnergyRatios = new List<double>(spectrogram.Count());
         foreach (var frame in spectrogram)
         {
             // Convert spectrum to power

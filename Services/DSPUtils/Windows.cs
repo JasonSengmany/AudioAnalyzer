@@ -19,7 +19,11 @@ public abstract class WindowFunction
         {
             _cachedWindowCoefficients = GetWindowCoefficients(samples.Count());
         }
-        return samples.Zip(_cachedWindowCoefficients, (sample, coeff) => sample * coeff).ToList();
+        for (var i = 0; i < samples.Count(); i++)
+        {
+            samples[i] *= _cachedWindowCoefficients[i];
+        }
+        return samples;
     }
 
     protected abstract double[] GetWindowCoefficients(int width);

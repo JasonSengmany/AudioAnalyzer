@@ -5,7 +5,7 @@ namespace AudioAnalyser.FeatureExtraction;
 
 public class SimpleBeatDetector : BeatDetector
 {
-    private float _energyThresholdFactor = 5f;
+    private float _energyThresholdFactor = 1.5f;
 
     protected override int DetectBPM(IMusicFileStream reader)
     {
@@ -17,7 +17,7 @@ public class SimpleBeatDetector : BeatDetector
         var beatString = new StringBuilder();
         while ((sample = reader.ReadNextSampleFrame()) != null)
         {
-            instantEnergyValue += sample[0] * sample[0] + sample[1] * sample[1];
+            instantEnergyValue += sample[0] * sample[0] + ((sample.Count() == 1) ? 0 : sample[1] * sample[1]);
             numSample++;
             if (numSample == _instantBufferLength)
             {
@@ -77,7 +77,7 @@ public class SimpleBeatDetector : BeatDetector
         Console.WriteLine("Prediction Confidence: {0:0.00}%", (double)expectedIntervalGroup.Count() / total * 100);
 
         //Repeat detection if probability of detected BPM is less than 20%
-        if ((double)expectedIntervalGroup.Count() / total * 100 < 20.0)
+        if ((double)expectedIntervalGroup.Count() / total * 100 < 20.0 || expectedIntervalGroup.Count() == 1)
         {
             _energyThresholdFactor /= 1.05f;
             reader.Seek(0, SeekOrigin.Begin);
