@@ -11,25 +11,7 @@ public interface IMusicFileStream : IDisposable
     TimeSpan TotalTime { get; }
     string Filename { get; set; }
     float[]? ReadNextSampleFrame();
-
-    // Summary:
-    //      Reads in a block of data from the music stream.
-    //
-    // Parameters:
-    //   blockSize:
-    //     Number of samples to be read.
-    //   buffer:
-    //      2D array that stores the read data.
-    //
-    // Returns:
-    //     Number of samples read. If n-channel audio is present, total samples will be n*return value.
-    //
-    // Exceptions:
-    //   T:System.ArgumentOutOfRangeException:
-    //     The length of value is less than 2.
     List<float[]> ReadBlock(int blockLength);
-
-    //Returns all data samples
     List<float[]> ReadAll();
     void PlayAudio();
     void PlayAudioAndDisplayBeat(int bpm);
@@ -79,7 +61,7 @@ public class WaveFileStream : IMusicFileStream
         int offset = 0;
         for (int sample = 0; sample < samplesRead; sample++)
         {
-            var buffer = new float[2];
+            var buffer = new float[2] { 0, 0 };
             for (int channel = 0; channel < _reader.WaveFormat.Channels; channel++)
             {
                 if (_reader.WaveFormat.BitsPerSample == 16)

@@ -26,16 +26,26 @@ public abstract class WindowFunction
         return samples;
     }
 
-    protected abstract double[] GetWindowCoefficients(int width);
+    public abstract double[] GetWindowCoefficients(int width);
 }
 
 public class HammingWindow : WindowFunction
 {
-    protected override double[] GetWindowCoefficients(int width)
+    public override double[] GetWindowCoefficients(int width)
     {
         var window = new MathNet.Filtering.Windowing.HammingWindow() { Width = width };
         window.Precompute();
         return window.CopyToArray();
     }
 
+}
+
+public class HannWindow : WindowFunction
+{
+    public override double[] GetWindowCoefficients(int width)
+    {
+        var window = new MathNet.Filtering.Windowing.HannWindow() { Width = width };
+        window.Precompute();
+        return window.CopyToArray();
+    }
 }

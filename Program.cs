@@ -15,14 +15,14 @@ if (!File.Exists(args[0]))
 
 // Example pipeline created to extract features from a song
 var pipe = new FeatureExtractionPipeline();
-pipe.Load(new CombFilterBeatDetector()
-//   new BasicEnvelopeDetector(),
-//   new ZeroCrossingRateExtractor(),
-//   new RootMeanSquareExtractor(),
-//   new FrequecySpectrogramExtractor(),
-//   new BandEnergyRatioExtractor(),
-//   new SpectralCentroidExtractor(),
-//   new MfccExtractor());
+pipe.Load(new ClearRiceBeatDetector()
+// new BasicEnvelopeDetector(),
+// new ZeroCrossingRateExtractor(),
+// new RootMeanSquareExtractor(),
+// new FrequecySpectrogramExtractor(),
+// new BandEnergyRatioExtractor(),
+// new SpectralCentroidExtractor(),
+// new MfccExtractor());
 );
 
 var song = new Song(args[0]);

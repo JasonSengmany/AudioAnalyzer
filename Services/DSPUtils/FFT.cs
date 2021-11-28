@@ -26,10 +26,36 @@ internal sealed class FourierTransform
         }
     }
 
+    public static Complex[] Radix2IFFT(Complex[] signal)
+    {
+        if ((signal.Length & (signal.Length - 1)) == 0)
+        {
+            var normFactor = Math.Sqrt(signal.Length);
+            return IFFTBody(signal).Select(x => x / normFactor).ToArray();
+
+        }
+        else
+        {
+            var nextPowerOf2 = Math.Pow(2, (int)(Math.Log2(signal.Length)) + 1);
+            var paddedSignal = new Complex[(int)nextPowerOf2];
+            Array.Fill(paddedSignal, Complex.Zero);
+            signal.CopyTo(paddedSignal, 0);
+            var normFactor = Math.Sqrt(paddedSignal.Length);
+            return IFFTBody(paddedSignal).Select(x => x / normFactor).ToArray();
+        }
+    }
+
     public static Complex[] Radix2FFT(double[] signal)
     {
         return Radix2FFT(signal.Select(x => new Complex(x, 0)).ToArray());
     }
+
+
+    public static Complex[] Radix2IFFT(double[] signal)
+    {
+        return Radix2IFFT(signal.Select(x => new Complex(x, 0)).ToArray());
+    }
+
     private static Complex[] FFTBody(Complex[] signal)
     {
         var n = signal.Length;
@@ -39,6 +65,28 @@ internal sealed class FourierTransform
         var y1 = FFTBody(signal.Where((val, index) => index % 2 == 1).ToArray());
 
         var wn = Complex.Exp(new Complex(0, -2 * Math.PI / n));
+        var w = Complex.One;
+
+        var y = new Complex[n];
+        for (var k = 0; k <= n / 2 - 1; k++)
+        {
+            y[k] = y0[k] + w * y1[k];
+            y[n / 2 + k] = y0[k] - w * y1[k];
+            w = w * wn;
+        }
+        return y;
+    }
+
+
+    private static Complex[] IFFTBody(Complex[] signal)
+    {
+        var n = signal.Length;
+        if (n == 1) return signal;
+
+        var y0 = IFFTBody(signal.Where((val, index) => index % 2 == 0).ToArray());
+        var y1 = IFFTBody(signal.Where((val, index) => index % 2 == 1).ToArray());
+
+        var wn = Complex.Exp(new Complex(0, 2 * Math.PI / n));
         var w = Complex.One;
 
         var y = new Complex[n];
