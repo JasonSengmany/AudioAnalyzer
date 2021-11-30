@@ -29,4 +29,7 @@ var song = new Song(args[0]);
 pipe.Process(song);
 Console.WriteLine(song);
 
+// song = new Song("../music/Macha.wav");
+// pipe.Process(song);
+// Console.WriteLine(song);
 return 0;

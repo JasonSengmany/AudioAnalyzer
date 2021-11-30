@@ -6,20 +6,26 @@ public abstract class WindowFunction
     private double[]? _cachedWindowCoefficients = null;
     public List<double> ApplyWindow(List<double> samples)
     {
-        if (_cachedWindowCoefficients == null || samples.Count() != _cachedWindowCoefficients.Count())
+        if (_cachedWindowCoefficients == null || samples.Count != _cachedWindowCoefficients.Length)
         {
-            _cachedWindowCoefficients = GetWindowCoefficients(samples.Count());
+            _cachedWindowCoefficients = GetWindowCoefficients(samples.Count);
         }
-        return samples.Zip(_cachedWindowCoefficients, (sample, coeff) => sample * coeff).ToList();
+
+        for (var i = 0; i < samples.Count; i++)
+        {
+            samples[i] *= _cachedWindowCoefficients[i];
+        }
+        return samples;
     }
 
     public List<Complex> ApplyWindow(List<Complex> samples)
     {
-        if (_cachedWindowCoefficients == null || samples.Count() != _cachedWindowCoefficients.Count())
+        if (_cachedWindowCoefficients == null || samples.Count != _cachedWindowCoefficients.Length)
         {
-            _cachedWindowCoefficients = GetWindowCoefficients(samples.Count());
+            _cachedWindowCoefficients = GetWindowCoefficients(samples.Count);
         }
-        for (var i = 0; i < samples.Count(); i++)
+
+        for (var i = 0; i < samples.Count; i++)
         {
             samples[i] *= _cachedWindowCoefficients[i];
         }

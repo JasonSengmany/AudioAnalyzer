@@ -7,15 +7,18 @@ namespace AudioAnalyser.FeatureExtraction;
 /// <summary>
 /// Class <c>ComgFilterBeatDetector</c> is used to extract the beats per minute from a song
 /// using a series of comb filters convolved with the frequency spectrum of a sample from the song.
-/// This extractor is limited to detection in the range of 60-180 BPM. 
+/// This extractor is limited to detection in the range of 60-180 BPM and is unaware of potential for 
+/// down beats to occur at different pitch. 
 /// </summary>
 public class CombFilterBeatDetector : BeatDetector
 {
     private readonly int _lowerBPM = 60;
     private readonly int _upperBPM = 180;
-
-    private readonly double[] _frequencyBands = { 0, 200, 400, 800, 1600, 3200 };
     private readonly WindowFunction window = new HammingWindow();
+
+    private int _cachedSampleRate = 0;
+
+    private List<Complex[]> _cachedTrainOfImpulses = new();
 
     /// <summary>
     /// Performs beat detection using the correlation between comb filters of differing frequencies and 
@@ -44,17 +47,25 @@ public class CombFilterBeatDetector : BeatDetector
         frequencySpectrum = frequencySpectrum.Take(frequencySpectrum.Length / 2 + 1)
             .ToArray();
 
-        var trainOfImpulses = ComputeTrainOfImpulses(ComputePeriods(reader.SampleRate),
+        if (reader.SampleRate != _cachedSampleRate)
+        {
+            _cachedSampleRate = reader.SampleRate;
+            _cachedTrainOfImpulses = ComputeTrainOfImpulses(ComputePeriods(reader.SampleRate),
             differentiatedSample.Count);
+        }
 
         var energies = new List<double>();
-
-        foreach (var train in trainOfImpulses)
+        var plt = new ScottPlot.Plot();
+        foreach (var train in _cachedTrainOfImpulses)
         {
+            plt.AddSignal(train.Select(x => x.Magnitude).ToArray());
+            plt.SaveFig("Subbandandtrain.bmp");
+            plt.Clear();
             energies.Add(train.Zip(frequencySpectrum, (lhs, rhs) => (lhs * rhs).Magnitude).Sum());
         }
 
         var index = energies.IndexOf(energies.Max());
+
         return _lowerBPM + index;
     }
 
@@ -85,22 +96,14 @@ public class CombFilterBeatDetector : BeatDetector
         foreach (var period in periods)
         {
             var trainOfImpulse = new Complex[numSamples];
-            for (var i = 0; i < numSamples; i++)
+            for (var i = 0; i < numSamples; i += period)
             {
-                if (i % period == 0)
-                {
-                    trainOfImpulse[i] = new Complex(float.MaxValue, float.MaxValue);
-                }
-                else
-                {
-                    trainOfImpulse[i] = Complex.Zero;
-                }
+                trainOfImpulse[i] = new Complex(short.MaxValue, short.MaxValue);
             }
             var frequency = FourierTransform.Radix2FFT(window.ApplyWindow(trainOfImpulse.ToList()).ToArray());
             trainOfImpulses.Add(frequency.Take(frequency.Length / 2 + 1).ToArray());
         }
         return trainOfImpulses;
     }
-
 
 }
