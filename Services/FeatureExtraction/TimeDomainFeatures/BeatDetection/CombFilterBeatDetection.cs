@@ -58,9 +58,6 @@ public class CombFilterBeatDetector : BeatDetector
         var plt = new ScottPlot.Plot();
         foreach (var train in _cachedTrainOfImpulses)
         {
-            plt.AddSignal(train.Select(x => x.Magnitude).ToArray());
-            plt.SaveFig("Subbandandtrain.bmp");
-            plt.Clear();
             energies.Add(train.Zip(frequencySpectrum, (lhs, rhs) => (lhs * rhs).Magnitude).Sum());
         }
 
