@@ -1,8 +1,8 @@
 using System.Numerics;
-using AudioAnalyser.DSPUtils;
-using AudioAnalyser.MusicFileReader;
+using AudioAnalyzer.DSPUtils;
+using AudioAnalyzer.MusicFileReader;
+namespace AudioAnalyzer.FeatureExtraction;
 
-namespace AudioAnalyser.FeatureExtraction;
 
 /// <summary>
 /// Class <c>ComgFilterBeatDetector</c> is used to extract the beats per minute from a song

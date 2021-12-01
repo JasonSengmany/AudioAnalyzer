@@ -1,6 +1,6 @@
-using AudioAnalyser.FeatureExtraction;
-using AudioAnalyser.Models;
-using AudioAnalyser.MusicFileReader;
+using AudioAnalyzer.FeatureExtraction;
+using AudioAnalyzer.Models;
+using AudioAnalyzer.MusicFileReader;
 
 public class TimeSpanExtractor : IFeatureExtractor
 {
@@ -8,7 +8,7 @@ public class TimeSpanExtractor : IFeatureExtractor
     {
         using (var reader = MusicFileStreamFactory.GetStreamReader(song))
         {
-            song.TotalTime = reader.TotalTime;
+            song.TotalTime = reader.TotalTime.TotalSeconds;
         }
         return song;
     }

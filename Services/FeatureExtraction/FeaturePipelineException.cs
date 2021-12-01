@@ -1,6 +1,4 @@
-using System;
-
-namespace AudioAnalyser.FeatureExtraction;
+namespace AudioAnalyzer.FeatureExtraction;
 
 /// <summary>
 /// Thrown when an error with the feature pipeline configuration occurs

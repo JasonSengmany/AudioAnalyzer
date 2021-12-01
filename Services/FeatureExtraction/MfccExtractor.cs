@@ -1,10 +1,10 @@
 using System.Numerics;
-using AudioAnalyser.Models;
+using AudioAnalyzer.Models;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
-using AudioAnalyser.DSPUtils;
+using AudioAnalyzer.DSPUtils;
 
-namespace AudioAnalyser.FeatureExtraction;
+namespace AudioAnalyzer.FeatureExtraction;
 /// <summary>
 /// Class <c>MfccExtractor</c> is used to extract mel-frequency cepstral coefficients from a <c>Song</c>
 /// </summary>

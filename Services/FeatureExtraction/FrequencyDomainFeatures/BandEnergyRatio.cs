@@ -1,7 +1,7 @@
 using System.Numerics;
-using AudioAnalyser.Models;
+using AudioAnalyzer.Models;
 
-namespace AudioAnalyser.FeatureExtraction;
+namespace AudioAnalyzer.FeatureExtraction;
 
 /// <summary>
 /// This class is used to extract the band energy ratios (BER) which indicates how much lower frequencies dominate the signal.

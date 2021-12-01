@@ -1,7 +1,7 @@
 
-using AudioAnalyser.FeatureExtraction;
-using AudioAnalyser.Models;
-using AudioAnalyser.MusicFileReader;
+using AudioAnalyzer.FeatureExtraction;
+using AudioAnalyzer.Models;
+using AudioAnalyzer.MusicFileReader;
 
 public class RootMeanSquareExtractor : IFeatureExtractor
 {

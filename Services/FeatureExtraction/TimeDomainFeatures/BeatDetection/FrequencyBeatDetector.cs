@@ -1,10 +1,10 @@
 using NAudio.Wave;
 using System.Text;
-using AudioAnalyser.MusicFileReader;
+using AudioAnalyzer.MusicFileReader;
 using System.Numerics;
-using AudioAnalyser.DSPUtils;
+using AudioAnalyzer.DSPUtils;
 
-namespace AudioAnalyser.FeatureExtraction;
+namespace AudioAnalyzer.FeatureExtraction;
 
 public class FrequencyBeatDetector : BeatDetector
 {

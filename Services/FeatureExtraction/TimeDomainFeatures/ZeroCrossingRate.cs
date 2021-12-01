@@ -1,7 +1,7 @@
-using AudioAnalyser.Models;
-using AudioAnalyser.MusicFileReader;
+using AudioAnalyzer.Models;
+using AudioAnalyzer.MusicFileReader;
 
-namespace AudioAnalyser.FeatureExtraction;
+namespace AudioAnalyzer.FeatureExtraction;
 
 public class ZeroCrossingRateExtractor : IFeatureExtractor
 {

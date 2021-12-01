@@ -1,9 +1,9 @@
 
 using System.Numerics;
-using AudioAnalyser.DSPUtils;
-using AudioAnalyser.MusicFileReader;
+using AudioAnalyzer.DSPUtils;
+using AudioAnalyzer.MusicFileReader;
 
-namespace AudioAnalyser.FeatureExtraction;
+namespace AudioAnalyzer.FeatureExtraction;
 public class HalfHannEnvelopeDetector : EnvelopeDetector
 {
     protected override List<float> GetAmplitudeEnvelope(IMusicFileStream reader)

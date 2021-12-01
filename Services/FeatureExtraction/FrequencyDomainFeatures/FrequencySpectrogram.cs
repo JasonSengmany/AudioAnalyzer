@@ -1,8 +1,8 @@
 using System.Numerics;
-using AudioAnalyser.DSPUtils;
-using AudioAnalyser.FeatureExtraction;
-using AudioAnalyser.Models;
-using AudioAnalyser.MusicFileReader;
+using AudioAnalyzer.DSPUtils;
+using AudioAnalyzer.FeatureExtraction;
+using AudioAnalyzer.Models;
+using AudioAnalyzer.MusicFileReader;
 
 /// <summary>
 /// Used to perform a short time fourier transform of the signal. 
@@ -32,13 +32,13 @@ public class FrequecySpectrogramExtractor : IFeatureExtractor
     private List<Complex[]> GetSpectrogram(IMusicFileStream reader)
     {
         var musicData = reader.ReadAll()
-            .Select(channelData => new Complex(channelData[0], channelData[1])).ToList();
-        var sampleFrames = FourierTransform.PartitionToFrames(musicData, FrameSize, HopLength);
-        var spectrogram = new List<Complex[]>(sampleFrames.Count());
-        foreach (var frame in sampleFrames)
+            .Select(channelData => new Complex(channelData[0], channelData[1])).ToArray();
+        var musicDataSpan = musicData.AsSpan();
+        var spectrogram = new List<Complex[]>();
+        for (var offset = 0; offset < musicData.Length - FrameSize; offset += HopLength)
         {
-            window.ApplyWindow(frame);
-            var frequencySpectrum = FourierTransform.Radix2FFT(frame.ToArray());
+            var windowedFrame = window.ApplyWindow(musicDataSpan.Slice(offset, FrameSize));
+            var frequencySpectrum = FourierTransform.Radix2FFT(windowedFrame.ToArray());
             spectrogram.Add(frequencySpectrum.Take(frequencySpectrum.Count() / 2 + 1).ToArray());
         }
         return spectrogram;

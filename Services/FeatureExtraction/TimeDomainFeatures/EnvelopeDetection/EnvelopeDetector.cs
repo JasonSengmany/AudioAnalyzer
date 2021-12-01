@@ -1,8 +1,8 @@
-using AudioAnalyser.FeatureExtraction;
-using AudioAnalyser.Models;
-using AudioAnalyser.MusicFileReader;
+using AudioAnalyzer.FeatureExtraction;
+using AudioAnalyzer.Models;
+using AudioAnalyzer.MusicFileReader;
 
-namespace AudioAnalyser.FeatureExtraction;
+namespace AudioAnalyzer.FeatureExtraction;
 public abstract class EnvelopeDetector : IFeatureExtractor
 {
     protected abstract List<float> GetAmplitudeEnvelope(IMusicFileStream reader);

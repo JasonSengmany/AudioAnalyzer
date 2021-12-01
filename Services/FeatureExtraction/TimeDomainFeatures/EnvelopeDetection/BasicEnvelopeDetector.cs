@@ -1,9 +1,9 @@
 
-using AudioAnalyser.FeatureExtraction;
-using AudioAnalyser.Models;
-using AudioAnalyser.MusicFileReader;
+using AudioAnalyzer.FeatureExtraction;
+using AudioAnalyzer.Models;
+using AudioAnalyzer.MusicFileReader;
 
-namespace AudioAnalyser.FeatureExtraction;
+namespace AudioAnalyzer.FeatureExtraction;
 public class BasicEnvelopeDetector : EnvelopeDetector
 {
     protected override List<float> GetAmplitudeEnvelope(IMusicFileStream reader)

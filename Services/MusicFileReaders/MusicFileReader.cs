@@ -1,7 +1,7 @@
 using NAudio.Wave;
 using CSCore.Codecs.FLAC;
 
-namespace AudioAnalyser.MusicFileReader;
+namespace AudioAnalyzer.MusicFileReader;
 public interface IMusicFileStream : IDisposable
 {
     int NumChannels { get; }

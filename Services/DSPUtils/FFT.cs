@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace AudioAnalyser.DSPUtils;
+namespace AudioAnalyzer.DSPUtils;
 internal sealed class FourierTransform
 {
 

@@ -23,7 +23,7 @@
 
 using System;
 using System.Numerics;
-namespace AudioAnalyser.DSPUtils;
+namespace AudioAnalyzer.DSPUtils;
 internal sealed class FastDctLee
 {
 

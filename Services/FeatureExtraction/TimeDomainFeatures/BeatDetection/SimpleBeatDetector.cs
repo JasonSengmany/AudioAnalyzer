@@ -1,7 +1,7 @@
 using System.Text;
-using AudioAnalyser.MusicFileReader;
+using AudioAnalyzer.MusicFileReader;
 
-namespace AudioAnalyser.FeatureExtraction;
+namespace AudioAnalyzer.FeatureExtraction;
 
 public class SimpleBeatDetector : BeatDetector
 {

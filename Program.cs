@@ -1,35 +1,39 @@
-﻿using AudioAnalyser.FeatureExtraction;
-using AudioAnalyser.Models;
+﻿using AudioAnalyzer.FeatureExtraction;
+using AudioAnalyzer.Services;
+using Microsoft.Extensions.DependencyInjection;
+
 
 if (args.Count() != 1)
 {
-    Console.WriteLine("Usage: dotnet run </pathToMusicFile>");
+    Console.WriteLine("Usage: dotnet run </pathToMusicFileOrDirectory>");
     return -1;
 }
 
-if (!File.Exists(args[0]))
+if (!File.Exists(args[0]) && !Directory.Exists(args[0]))
 {
-    Console.WriteLine("File does not exists");
+    Console.WriteLine("File or directory does not exists");
     return -1;
 }
 
-// Example pipeline created to extract features from a song
-var pipe = new FeatureExtractionPipeline();
-pipe.Load(new ClearRiceBeatDetector()
-// new BasicEnvelopeDetector(),
-// new ZeroCrossingRateExtractor(),
-// new RootMeanSquareExtractor(),
-// new FrequecySpectrogramExtractor(),
-// new BandEnergyRatioExtractor(),
-// new SpectralCentroidExtractor(),
-// new MfccExtractor());
-);
+var services = new ServiceCollection();
+services.AddSingleton<AudioAnalyzerController>();
+services.AddScoped<IPersistenceService, JsonPersistenceService>();
+services.AddSingleton<FeatureExtractionPipeline>((serviceProvider) =>
+new FeatureExtractionPipeline(
+    new BasicEnvelopeDetector(),
+    new CombFilterBeatDetector()
+));
+var serviceProvider = services.BuildServiceProvider();
 
-var song = new Song(args[0]);
-pipe.Process(song);
-Console.WriteLine(song);
 
-// song = new Song("../music/Macha.wav");
-// pipe.Process(song);
-// Console.WriteLine(song);
+
+var controller = serviceProvider.GetRequiredService<AudioAnalyzerController>();
+var songs = controller.LoadSongs(args[0]);
+controller.ProcessFeatures();
+await controller.SaveFeatures("./test.json");
+foreach (var song in controller.Songs)
+{
+    Console.WriteLine(song);
+}
+
 return 0;

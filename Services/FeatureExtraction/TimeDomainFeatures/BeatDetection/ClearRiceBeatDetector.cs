@@ -1,7 +1,7 @@
 using System.Numerics;
-using AudioAnalyser.DSPUtils;
-using AudioAnalyser.MusicFileReader;
-namespace AudioAnalyser.FeatureExtraction;
+using AudioAnalyzer.DSPUtils;
+using AudioAnalyzer.MusicFileReader;
+namespace AudioAnalyzer.FeatureExtraction;
 
 /// <summary>
 /// Class <c>ClearRiceBeatDetector</c> is used to extract the beats per minute from a song
@@ -17,6 +17,9 @@ public class ClearRiceBeatDetector : BeatDetector
     /// </summary>
     private readonly int _numSubbands = 32;
     private readonly WindowFunction window = new HammingWindow();
+
+    private int _cachedSampleRate = 0;
+    private List<Complex[]> _cachedTrainOfImpulses = new();
 
     /// <summary>
     /// Performs beat detection using the correlation between comb filters of differing frequencies and 
@@ -54,16 +57,20 @@ public class ClearRiceBeatDetector : BeatDetector
             differentiatedEnvelopes.Add(FourierTransform.Radix2FFT(differentiatedSubband.ToArray()));
         }
 
-        var trainOfImpulses = ComputeTrainOfImpulses(ComputePeriods(reader.SampleRate),
-            differentiatedEnvelopes.First().Length);
+        if (reader.SampleRate != _cachedSampleRate)
+        {
+            _cachedTrainOfImpulses = ComputeTrainOfImpulses(ComputePeriods(reader.SampleRate),
+           differentiatedEnvelopes.First().Length);
+        }
+
 
 
         // var plt = new ScottPlot.Plot();
         var energies = new List<double>();
         foreach (var subband in differentiatedEnvelopes)
         {
-            var subbandEnergies = new List<double>(trainOfImpulses.Count);
-            foreach (var train in trainOfImpulses)
+            var subbandEnergies = new List<double>(_cachedTrainOfImpulses.Count);
+            foreach (var train in _cachedTrainOfImpulses)
             {
                 // plt.AddSignal(subband.Select(x => x.Magnitude).ToArray());
                 // // plt.AddSignal(train.Select(x => x.Magnitude).ToArray());
@@ -74,7 +81,6 @@ public class ClearRiceBeatDetector : BeatDetector
 
             // plt.AddSignal(subbandEnergies.ToArray());
             // plt.SaveFig("Energies.png");
-            Console.WriteLine($"{_lowerBPM + subbandEnergies.IndexOf(subbandEnergies.Max())} {subbandEnergies.Max()}");
             if (energies.Count == 0)
             {
                 energies = subbandEnergies;
@@ -188,7 +194,7 @@ public class ClearRiceBeatDetector : BeatDetector
         var window = GenerateHalfHannWindow(temporalSubbands.First().Length, sampleRate);
         var frequencyDomainFilterCoeff = FourierTransform.Radix2FFT(window);
 
-        var plt = new ScottPlot.Plot();
+        // var plt = new ScottPlot.Plot();
         var smoothedSubbands = new List<Complex[]>();
         foreach (var subband in temporalSubbands)
         {

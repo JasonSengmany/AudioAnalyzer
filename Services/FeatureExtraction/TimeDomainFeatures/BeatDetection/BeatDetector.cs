@@ -1,7 +1,7 @@
-using AudioAnalyser.MusicFileReader;
-using AudioAnalyser.Models;
+using AudioAnalyzer.MusicFileReader;
+using AudioAnalyzer.Models;
 
-namespace AudioAnalyser.FeatureExtraction;
+namespace AudioAnalyzer.FeatureExtraction;
 
 public abstract class BeatDetector : IFeatureExtractor
 {

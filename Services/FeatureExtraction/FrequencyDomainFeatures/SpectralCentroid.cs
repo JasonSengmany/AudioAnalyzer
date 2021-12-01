@@ -1,7 +1,7 @@
 using System.Numerics;
-using AudioAnalyser.Models;
+using AudioAnalyzer.Models;
 
-namespace AudioAnalyser.FeatureExtraction;
+namespace AudioAnalyzer.FeatureExtraction;
 
 /// <summary>
 /// This class extracts the spectral centroid (sc) of a song which indicates how "bright" or "dark" a signal appears.
@@ -14,10 +14,8 @@ public class SpectralCentroidExtractor : IFeatureExtractor
         {
             throw new FeaturePipelineException("Spectrogram extractor required before band energy ratio extractor");
         }
-        using (var reader = MusicFileStreamFactory.GetStreamReader(song))
-        {
-            song.SpectralCentroids = GetSpectralCentroids(song.Spectrogram, song.FrequencyStep);
-        }
+
+        song.SpectralCentroids = GetSpectralCentroids(song.Spectrogram, song.FrequencyStep);
         return song;
     }
 
