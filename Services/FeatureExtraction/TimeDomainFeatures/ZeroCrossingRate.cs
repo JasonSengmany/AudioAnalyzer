@@ -1,4 +1,3 @@
-using AudioAnalyzer.Models;
 using AudioAnalyzer.MusicFileReader;
 
 namespace AudioAnalyzer.FeatureExtraction;

@@ -1,4 +1,3 @@
-
 using System.Numerics;
 using AudioAnalyzer.DSPUtils;
 using AudioAnalyzer.MusicFileReader;

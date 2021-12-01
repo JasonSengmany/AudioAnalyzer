@@ -1,5 +1,3 @@
-
-using AudioAnalyzer.Models;
 using AudioAnalyzer.Services;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -12,7 +10,11 @@ public class JsonPersistenceService : IPersistenceService
             return new();
         }
         using FileStream openStream = File.OpenRead(path);
-        var songs = await JsonSerializer.DeserializeAsync<List<Song>>(openStream);
+        JsonSerializerOptions options = new()
+        {
+            IncludeFields = true
+        };
+        var songs = await JsonSerializer.DeserializeAsync<List<Song>>(openStream, options);
         await openStream.DisposeAsync();
         return songs ?? new();
     }

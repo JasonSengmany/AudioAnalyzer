@@ -1,4 +1,3 @@
-using AudioAnalyzer.Models;
 namespace AudioAnalyzer.MusicFileReader;
 
 public static class MusicFileStreamFactory

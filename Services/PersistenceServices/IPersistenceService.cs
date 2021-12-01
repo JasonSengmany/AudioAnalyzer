@@ -1,5 +1,3 @@
-using AudioAnalyzer.Models;
-
 namespace AudioAnalyzer.Services;
 public interface IPersistenceService
 {

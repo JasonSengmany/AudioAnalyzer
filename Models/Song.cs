@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Text.Json.Serialization;
+using CsvHelper.Configuration.Attributes;
 
 namespace AudioAnalyzer.Models;
 
@@ -9,52 +10,98 @@ namespace AudioAnalyzer.Models;
 /// </summary>
 public record Song
 {
-    [JsonInclude]
     public string FilePath { get; init; } = String.Empty;
 
     /// <value>Total running time of the song in seconds</value>
-    [JsonInclude]
-    public double? TotalTime { get; internal set; }
+    public double? TotalTime { get; set; }
 
     /// <value>Estimate of the song's beats per minute set by class <c>BeatDetector</c></value>
-    [JsonInclude]
-    public int? BeatsPerMinute { get; internal set; }
+    public int? BeatsPerMinute { get; set; }
+
+    private List<double> _zeroCrossingRates = new();
 
     /// <value>Zero crossing rate for each frame partitioned by class <c>ZeroCrossingRateExtractor</c></value>
-    public List<double> ZeroCrossingRates { get; internal set; }
+    [JsonIgnore]
+    [Ignore]
+    public List<double> ZeroCrossingRates
+    {
+        get { return _zeroCrossingRates; }
+        set
+        {
+            _zeroCrossingRates = value;
+            AverageZeroCrossingRate = _zeroCrossingRates.Average();
+        }
+    }
+    public double? AverageZeroCrossingRate { get; set; }
+    private List<double> _rootMeanSquares = new();
 
-    [JsonInclude]
-    public double? AverageZeroCrossingRate => ZeroCrossingRates?.Average();
-    public List<double> RootMeanSquares { get; internal set; }
+    [JsonIgnore]
+    [Ignore]
+    public List<double> RootMeanSquares
+    {
+        get { return _rootMeanSquares; }
+        set
+        {
+            _rootMeanSquares = value;
+            AverageRootMeanSquare = _rootMeanSquares.Average();
+        }
+    }
+    public double? AverageRootMeanSquare { get; set; }
+    private List<float> _amplitudeEnvelope = new();
 
-    [JsonInclude]
-    public double? AverageRootMeanSquare => RootMeanSquares?.Average();
-    public List<float> AmplitudeEnvelope { get; internal set; }
+    [JsonIgnore]
+    [Ignore]
+    public List<float> AmplitudeEnvelope
+    {
+        get { return _amplitudeEnvelope; }
+        set
+        {
+            _amplitudeEnvelope = value;
+            AverageEnvelope = _amplitudeEnvelope.Average();
+        }
+    }
 
-    [JsonInclude]
-    public float? AverageEnvelope => AmplitudeEnvelope?.Average();
-
-
+    public float? AverageEnvelope { get; set; }
     internal double TimeStep { get; set; }
     internal double FrequencyStep { get; set; }
-    public List<Complex[]> Spectrogram { get; internal set; }
 
-    [JsonInclude]
-    public List<double> BandEnergyRatios { get; internal set; }
-    // Vocals typically have < 100 Average BER while electronic music have > 120
-    public double? AverageBandEnergyRatio => BandEnergyRatios?.Average();
+    [JsonIgnore]
+    [Ignore]
+    public List<Complex[]> Spectrogram { get; set; } = new();
+    private List<double> _bandEnergyRatios = new();
+    [JsonIgnore]
+    [Ignore]
+    public List<double> BandEnergyRatios
+    {
+        get { return _bandEnergyRatios; }
+        set
+        {
+            _bandEnergyRatios = value;
+            AverageBandEnergyRatio = _bandEnergyRatios.Average();
+        }
+    }
+    public double? AverageBandEnergyRatio { get; set; }
+    private List<double> _spectralCentroids = new();
 
-    public List<double> SpectralCentroids { get; internal set; }
-
-    [JsonInclude]
-    public double? AverageSpectralCentroid => SpectralCentroids?.Average();
+    [JsonIgnore]
+    [Ignore]
+    public List<double> SpectralCentroids
+    {
+        get { return _spectralCentroids; }
+        set
+        {
+            _spectralCentroids = value;
+            AverageSpectralCentroid = _spectralCentroids.Average();
+        }
+    }
+    public double? AverageSpectralCentroid { get; set; }
 
     // Psychoacoustic features
     //MFCCs reflect the nature of the sound
-    [JsonInclude]
-    public List<double[]> MFCC { get; internal set; }
+    [Ignore]
+    public List<double[]> MFCC { get; set; } = new();
 
-    public Song(string filePath) => FilePath = filePath;
+    // public Song(string filePath) => FilePath = filePath;
 
 
 }

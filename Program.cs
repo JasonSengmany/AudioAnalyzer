@@ -17,11 +17,12 @@ if (!File.Exists(args[0]) && !Directory.Exists(args[0]))
 
 var services = new ServiceCollection();
 services.AddSingleton<AudioAnalyzerController>();
-services.AddScoped<IPersistenceService, JsonPersistenceService>();
+services.AddScoped<IPersistenceService, CsvPersistenceService>();
 services.AddSingleton<FeatureExtractionPipeline>((serviceProvider) =>
 new FeatureExtractionPipeline(
-    new BasicEnvelopeDetector(),
-    new CombFilterBeatDetector()
+    new FrequecySpectrogramExtractor(),
+    new BandEnergyRatioExtractor(),
+    new SpectralCentroidExtractor()
 ));
 var serviceProvider = services.BuildServiceProvider();
 
@@ -30,7 +31,8 @@ var serviceProvider = services.BuildServiceProvider();
 var controller = serviceProvider.GetRequiredService<AudioAnalyzerController>();
 var songs = controller.LoadSongs(args[0]);
 controller.ProcessFeatures();
-await controller.SaveFeatures("./test.json");
+await controller.SaveFeatures("./test.csv");
+// await controller.LoadFeatures("./test.csv");
 foreach (var song in controller.Songs)
 {
     Console.WriteLine(song);

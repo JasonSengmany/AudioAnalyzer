@@ -1,5 +1,4 @@
 using System.Numerics;
-using AudioAnalyzer.Models;
 
 namespace AudioAnalyzer.FeatureExtraction;
 

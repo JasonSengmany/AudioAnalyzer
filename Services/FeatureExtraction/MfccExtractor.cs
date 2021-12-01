@@ -1,5 +1,4 @@
 using System.Numerics;
-using AudioAnalyzer.Models;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
 using AudioAnalyzer.DSPUtils;

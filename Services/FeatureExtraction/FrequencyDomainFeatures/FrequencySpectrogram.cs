@@ -1,9 +1,8 @@
 using System.Numerics;
 using AudioAnalyzer.DSPUtils;
 using AudioAnalyzer.FeatureExtraction;
-using AudioAnalyzer.Models;
 using AudioAnalyzer.MusicFileReader;
-
+using MathNet.Numerics.Providers.FourierTransform;
 /// <summary>
 /// Used to perform a short time fourier transform of the signal. 
 /// Prerequisite to other extractors such as <c>BandEnergyRatioExtractor</c>,
@@ -37,9 +36,9 @@ public class FrequecySpectrogramExtractor : IFeatureExtractor
         var spectrogram = new List<Complex[]>();
         for (var offset = 0; offset < musicData.Length - FrameSize; offset += HopLength)
         {
-            var windowedFrame = window.ApplyWindow(musicDataSpan.Slice(offset, FrameSize));
-            var frequencySpectrum = FourierTransform.Radix2FFT(windowedFrame.ToArray());
-            spectrogram.Add(frequencySpectrum.Take(frequencySpectrum.Count() / 2 + 1).ToArray());
+            var windowedFrame = window.ApplyWindow(musicDataSpan.Slice(offset, FrameSize)).ToArray();
+            FourierTransformControl.Provider.Forward(windowedFrame, FourierTransformScaling.SymmetricScaling);
+            spectrogram.Add(windowedFrame.Take(windowedFrame.Length / 2 + 1).ToArray());
         }
         return spectrogram;
     }

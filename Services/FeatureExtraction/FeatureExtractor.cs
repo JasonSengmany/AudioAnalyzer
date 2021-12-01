@@ -1,5 +1,3 @@
-using AudioAnalyzer.Models;
-
 namespace AudioAnalyzer.FeatureExtraction;
 
 public class FeatureExtractionPipeline
