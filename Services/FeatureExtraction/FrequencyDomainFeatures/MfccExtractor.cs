@@ -1,7 +1,7 @@
 using System.Numerics;
+using AudioAnalyzer.DSPUtils;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
-using AudioAnalyzer.DSPUtils;
 
 namespace AudioAnalyzer.FeatureExtraction;
 /// <summary>

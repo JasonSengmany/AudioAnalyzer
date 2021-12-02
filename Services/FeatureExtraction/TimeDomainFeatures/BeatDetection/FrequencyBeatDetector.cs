@@ -1,6 +1,6 @@
 using NAudio.Wave;
 using System.Text;
-using AudioAnalyzer.MusicFileReader;
+using AudioAnalyzer.Services;
 using System.Numerics;
 using AudioAnalyzer.DSPUtils;
 

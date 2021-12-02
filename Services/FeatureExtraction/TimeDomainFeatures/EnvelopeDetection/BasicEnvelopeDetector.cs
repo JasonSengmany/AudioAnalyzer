@@ -1,5 +1,5 @@
 
-using AudioAnalyzer.MusicFileReader;
+using AudioAnalyzer.Services;
 
 namespace AudioAnalyzer.FeatureExtraction;
 public class BasicEnvelopeDetector : EnvelopeDetector

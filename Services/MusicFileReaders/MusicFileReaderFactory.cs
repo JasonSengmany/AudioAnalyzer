@@ -1,8 +1,7 @@
-namespace AudioAnalyzer.MusicFileReader;
-
+namespace AudioAnalyzer.Services;
 public static class MusicFileStreamFactory
 {
-    public static readonly List<string> SupportedFormats = new() { ".wav", ".flac", ".mp3" };
+    public static readonly string[] SupportedFormats = new string[] { ".wav", ".flac", ".mp3" };
     public static IMusicFileStream GetStreamReader(Song song) => Path.GetExtension(song.FilePath).ToLower() switch
     {
         ".wav" => new WaveFileStream(song.FilePath),

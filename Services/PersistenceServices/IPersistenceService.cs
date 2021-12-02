@@ -1,4 +1,5 @@
 namespace AudioAnalyzer.Services;
+
 public interface IPersistenceService
 {
     Task Save(List<Song> songs, string path);

@@ -1,6 +1,7 @@
-using AudioAnalyzer.Services;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
+namespace AudioAnalyzer.Services;
 public class JsonPersistenceService : IPersistenceService
 {
     public async Task<List<Song>> Load(string path)

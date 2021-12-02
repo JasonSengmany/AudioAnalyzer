@@ -1,21 +1,21 @@
 
 using System.Globalization;
-using AudioAnalyzer.Services;
 using CsvHelper;
-using CsvHelper.Configuration;
+
+namespace AudioAnalyzer.Services;
 
 public class CsvPersistenceService : IPersistenceService
 {
-    public async Task<List<Song>> Load(string path)
+    public Task<List<Song>> Load(string path)
     {
-        List<Song> songs = new();
+        List<Song> songs;
 
         using (var reader = new StreamReader(path))
         using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
         {
             songs = csv.GetRecords<Song>().ToList();
         }
-        return songs;
+        return Task.FromResult(songs);
     }
 
     public async Task Save(List<Song> songs, string path)

@@ -1,5 +1,5 @@
 using AudioAnalyzer.FeatureExtraction;
-using AudioAnalyzer.MusicFileReader;
+using AudioAnalyzer.Services;
 
 public class TimeSpanExtractor : IFeatureExtractor
 {

@@ -21,13 +21,10 @@ services.AddScoped<IPersistenceService, CsvPersistenceService>();
 services.AddSingleton<FeatureExtractionPipeline>((serviceProvider) =>
 new FeatureExtractionPipeline(
     new FrequecySpectrogramExtractor(),
-    new BandEnergyRatioExtractor(),
     new SpectralCentroidExtractor()
 ));
+
 var serviceProvider = services.BuildServiceProvider();
-
-
-
 var controller = serviceProvider.GetRequiredService<AudioAnalyzerController>();
 var songs = controller.LoadSongs(args[0]);
 controller.ProcessFeatures();

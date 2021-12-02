@@ -1,8 +1,9 @@
 using System.Numerics;
 using AudioAnalyzer.DSPUtils;
-using AudioAnalyzer.FeatureExtraction;
-using AudioAnalyzer.MusicFileReader;
+using AudioAnalyzer.Services;
 using MathNet.Numerics.Providers.FourierTransform;
+
+namespace AudioAnalyzer.FeatureExtraction;
 /// <summary>
 /// Used to perform a short time fourier transform of the signal. 
 /// Prerequisite to other extractors such as <c>BandEnergyRatioExtractor</c>,
@@ -19,6 +20,7 @@ public class FrequecySpectrogramExtractor : IFeatureExtractor
 
     public Song ExtractFeature(Song song)
     {
+
         using (var reader = MusicFileStreamFactory.GetStreamReader(song))
         {
             song.Spectrogram = GetSpectrogram(reader);
