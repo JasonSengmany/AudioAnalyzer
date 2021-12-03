@@ -1,6 +1,8 @@
 using System.Numerics;
 using AudioAnalyzer.DSPUtils;
 using AudioAnalyzer.Services;
+using MathNet.Numerics.Providers.FourierTransform;
+
 namespace AudioAnalyzer.FeatureExtraction;
 
 
@@ -43,7 +45,8 @@ public class CombFilterBeatDetector : BeatDetector
 
         // Perform DFT by first windowing the sample and performing FFT
         window.ApplyWindow(differentiatedSample);
-        var frequencySpectrum = FourierTransform.Radix2FFT(differentiatedSample.ToArray());
+        var frequencySpectrum = differentiatedSample.ToArray();
+        FourierTransformControl.Provider.Forward(frequencySpectrum, FourierTransformScaling.SymmetricScaling);
         frequencySpectrum = frequencySpectrum.Take(frequencySpectrum.Length / 2 + 1)
             .ToArray();
 
@@ -55,7 +58,6 @@ public class CombFilterBeatDetector : BeatDetector
         }
 
         var energies = new List<double>();
-        var plt = new ScottPlot.Plot();
         foreach (var train in _cachedTrainOfImpulses)
         {
             energies.Add(train.Zip(frequencySpectrum, (lhs, rhs) => (lhs * rhs).Magnitude).Sum());
@@ -97,7 +99,8 @@ public class CombFilterBeatDetector : BeatDetector
             {
                 trainOfImpulse[i] = new Complex(short.MaxValue, short.MaxValue);
             }
-            var frequency = FourierTransform.Radix2FFT(window.ApplyWindow(trainOfImpulse.ToList()).ToArray());
+            var frequency = window.ApplyWindow(trainOfImpulse.ToList()).ToArray();
+            FourierTransformControl.Provider.Forward(frequency, FourierTransformScaling.SymmetricScaling);
             trainOfImpulses.Add(frequency.Take(frequency.Length / 2 + 1).ToArray());
         }
         return trainOfImpulses;

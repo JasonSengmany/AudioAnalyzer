@@ -19,16 +19,16 @@ public class RootMeanSquareExtractor : IFeatureExtractor
         var sampleBlock = reader.ReadBlock(BlockLength);
         while (sampleBlock.Count() == BlockLength)
         {
-            rootMeanSquares.Add(CalculateRootMeanSquares(sampleBlock));
+            rootMeanSquares.Add(CalculateRootMeanSquares(sampleBlock, reader.NumChannels));
             sampleBlock = reader.ReadBlock(BlockLength);
         }
         return rootMeanSquares;
     }
 
-    private double CalculateRootMeanSquares(List<float[]> sampleBlock)
+    private double CalculateRootMeanSquares(List<float[]> sampleBlock, int numChannels)
     {
         var meanChannelDataSquared = sampleBlock.Select(channelSamples =>
-             Math.Pow(channelSamples.Average(), 2));
+             Math.Pow(channelSamples.Sum() / numChannels, 2));
         return Math.Sqrt(meanChannelDataSquared.Average());
     }
 }

@@ -9,12 +9,12 @@ public class SpectralCentroidExtractor : IFeatureExtractor
 {
     public Song ExtractFeature(Song song)
     {
-        if (song.Spectrogram == null)
+        if (!song._metadata.ContainsKey("Spectrogram"))
         {
             throw new FeaturePipelineException("Spectrogram extractor required before band energy ratio extractor");
         }
-
-        song.AverageSpectralCentroid = GetSpectralCentroids(song.Spectrogram, song.FrequencyStep).Average();
+        song.AverageSpectralCentroid = GetSpectralCentroids((List<Complex[]>)song._metadata["Spectrogram"],
+                                                            (double)song._metadata["FrequencyStep"]).Average();
         return song;
     }
 

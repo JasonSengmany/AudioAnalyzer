@@ -25,11 +25,15 @@ public class MfccExtractor : IFeatureExtractor
     /// the mel-filter bank</value>
     public double UpperFrequencyBound { get; set; }
 
+    private int _cachedFilterLength;
+    private double _cachedFrequencyStep;
+    private Matrix<double> _cachedMelFilter = Matrix<double>.Build.Dense(0, 0);
+
     /// <summary>
     /// This constructor provides default values for the classes properties if not provided, based on generally 
     /// used audio processing parameters.
     /// </summary>
-    public MfccExtractor(int numMfccs = 30, int numMelBands = 64, double lowerFrequencyBound = 300,
+    public MfccExtractor(int numMfccs = 13, int numMelBands = 64, double lowerFrequencyBound = 300,
         double upperFrequencyBound = 10000)
         => (NumMfccs, NumMelBands, LowerFrequencyBound, UpperFrequencyBound) = (numMfccs, numMelBands, lowerFrequencyBound, upperFrequencyBound);
 
@@ -41,11 +45,12 @@ public class MfccExtractor : IFeatureExtractor
     /// <returns>Reference to the input parameter with the MFCC property set</returns>
     public Song ExtractFeature(Song song)
     {
-        if (song.Spectrogram == null)
+        if (!song._metadata.ContainsKey("Spectrogram"))
         {
             throw new FeaturePipelineException("Spectrogram is required to extract MFCCs");
         }
-        song.MFCC = GetMFCC(song.Spectrogram, song.FrequencyStep);
+        song.MFCC = GetAverageMfccs(GetMFCC((List<Complex[]>)song._metadata["Spectrogram"],
+                                            (double)song._metadata["FrequencyStep"]));
         return song;
     }
 
@@ -59,8 +64,12 @@ public class MfccExtractor : IFeatureExtractor
     private List<double[]> GetMFCC(List<Complex[]> spectrogram, double frequencyStep)
     {
 
-        var filterLength = spectrogram.First().Count();
-        var melFilter = ConstructMelFilterBands(filterLength, frequencyStep);
+        if (spectrogram.First().Count() != _cachedFilterLength || frequencyStep != _cachedFrequencyStep)
+        {
+            _cachedFilterLength = spectrogram.First().Count();
+            _cachedFrequencyStep = frequencyStep;
+            _cachedMelFilter = ConstructMelFilterBands(_cachedFilterLength, _cachedFrequencyStep);
+        }
 
         var mfccs = new List<double[]>(spectrogram.Count());
 
@@ -74,7 +83,7 @@ public class MfccExtractor : IFeatureExtractor
 
             // Apply mel-filtering using matrix multiplication with filterbank 
             var powerSpectrumVector = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(powerSpectrum);
-            var melFilteredPowerSpectrum = melFilter.Multiply(powerSpectrumVector);
+            var melFilteredPowerSpectrum = _cachedMelFilter.Multiply(powerSpectrumVector);
 
             // Take the log of the mel-fitered powers
             var logFilteredPowerSpectrum = melFilteredPowerSpectrum.Select(x => Math.Log10(1 + x));
@@ -87,6 +96,23 @@ public class MfccExtractor : IFeatureExtractor
         }
 
         return mfccs;
+    }
+
+    private double[] GetAverageMfccs(List<double[]> mfccsPerFrame)
+    {
+        var averageMfccs = new double[NumMfccs];
+        foreach (var mfccsInFrame in mfccsPerFrame)
+        {
+            for (var i = 0; i < NumMfccs; i++)
+            {
+                averageMfccs[i] += mfccsInFrame[i];
+            }
+        }
+        for (var i = 0; i < NumMfccs; i++)
+        {
+            averageMfccs[i] /= mfccsPerFrame.Count;
+        }
+        return averageMfccs;
     }
 
     /// <summary>
@@ -151,7 +177,7 @@ public class MfccExtractor : IFeatureExtractor
     /// <param name="filterSize"></param>
     /// <returns>Single row of the mel filter bank</returns>
     private double[] ConstructSingleMelBand(double lowerFreq, double centreFreq, double upperFreq,
-        double freqStep, int filterSize)
+                                            double freqStep, int filterSize)
     {
         var filter = new double[filterSize];
         for (var index = 0; index < filterSize; index++)

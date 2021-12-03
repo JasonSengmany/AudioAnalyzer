@@ -22,9 +22,9 @@ public class FrequecySpectrogramExtractor : PrerequisiteExtractor
     {
         using (var reader = MusicFileStreamFactory.GetStreamReader(song))
         {
-            song.Spectrogram = GetSpectrogram(reader);
-            song.TimeStep = (double)HopLength / reader.SampleRate;
-            song.FrequencyStep = (double)reader.SampleRate / FrameSize;
+            song._metadata.Add("Spectrogram", GetSpectrogram(reader));
+            song._metadata.Add("TimeStep", (double)HopLength / reader.SampleRate);
+            song._metadata.Add("FrequencyStep", (double)reader.SampleRate / FrameSize);
         }
     }
     private List<Complex[]> GetSpectrogram(IMusicFileStream reader)
@@ -44,6 +44,8 @@ public class FrequecySpectrogramExtractor : PrerequisiteExtractor
 
     protected override void PostFeatureExtraction(Song song)
     {
-        song.Spectrogram.Clear();
+        song._metadata.Remove("Spectrogram");
+        song._metadata.Remove("FrequencyStep");
+        song._metadata.Remove("TimeStep");
     }
 }

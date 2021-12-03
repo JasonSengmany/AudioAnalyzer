@@ -15,14 +15,28 @@ public class AudioAnalyzerController
     {
         if (Path.GetExtension(path) != null && MusicFileStreamFactory.SupportedFormats.Contains(Path.GetExtension(path)))
         {
-            Songs.Add(new Song() { FilePath = path });
-            return Songs;
+            return InitialiseSongFromFile(path);
         }
+        else
+        {
+            return InitialiseSongsFromDirectory(path);
+        }
+
+    }
+
+    private List<Song> InitialiseSongFromFile(string path)
+    {
+        Songs.Add(new Song() { FilePath = path });
+        return Songs;
+    }
+
+    private List<Song> InitialiseSongsFromDirectory(string path)
+    {
         var musicFilesInFolder = Directory.EnumerateFileSystemEntries(path, "*.*", searchOption: SearchOption.AllDirectories)
-            .Where(filename => MusicFileStreamFactory.SupportedFormats.Contains(Path.GetExtension(filename)));
+                                .Where(filename => MusicFileStreamFactory.SupportedFormats.Contains(Path.GetExtension(filename)));
         foreach (var musicFilePath in musicFilesInFolder)
         {
-            Songs.Add(new Song() { FilePath = musicFilePath });
+            InitialiseSongFromFile(musicFilePath);
         }
         return Songs;
     }
@@ -44,7 +58,7 @@ public class AudioAnalyzerController
         await _persistenceService.Save(Songs, path);
     }
 
-    public async Task LoadFeatures(string path)
+    public async Task InitialiseFeatures(string path)
     {
         var songs = await _persistenceService.Load(path);
         Songs.AddRange(songs);
