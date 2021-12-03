@@ -23,8 +23,3 @@ public class FeatureExtractionPipeline
         return song;
     }
 }
-
-public interface IFeatureExtractor
-{
-    Song ExtractFeature(Song song);
-}

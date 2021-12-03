@@ -7,29 +7,26 @@ namespace AudioAnalyzer.FeatureExtraction;
 /// <summary>
 /// Used to perform a short time fourier transform of the signal. 
 /// Prerequisite to other extractors such as <c>BandEnergyRatioExtractor</c>,
-/// <c>SpectralCentroidExtractor</c> and <c>MfccExtractor</c>
+/// <c>SpectralCentroidExtractor</c> and <c>MfccExtractor</c>. The spectrogram is
+/// cleared after all child extractors have executed.
 /// </summary>
-public class FrequecySpectrogramExtractor : IFeatureExtractor
+public class FrequecySpectrogramExtractor : PrerequisiteExtractor
 {
-    public int FrameSize { get; set; }
-    public int HopLength { get; set; }
+    public int FrameSize { get; set; } = 2048;
+    public int HopLength { get; set; } = 512;
     public WindowFunction window { get; set; } = new HammingWindow();
+    public FrequecySpectrogramExtractor(params IFeatureExtractor[] dependentExtractors)
+    : base(dependentExtractors) { }
 
-    public FrequecySpectrogramExtractor(int frameSize = 2048, int hopLength = 512)
-        => (FrameSize, HopLength) = (frameSize, hopLength);
-
-    public Song ExtractFeature(Song song)
+    protected override void PreFeatureExtraction(Song song)
     {
-
         using (var reader = MusicFileStreamFactory.GetStreamReader(song))
         {
             song.Spectrogram = GetSpectrogram(reader);
             song.TimeStep = (double)HopLength / reader.SampleRate;
             song.FrequencyStep = (double)reader.SampleRate / FrameSize;
         }
-        return song;
     }
-
     private List<Complex[]> GetSpectrogram(IMusicFileStream reader)
     {
         var musicData = reader.ReadAll()
@@ -43,5 +40,10 @@ public class FrequecySpectrogramExtractor : IFeatureExtractor
             spectrogram.Add(windowedFrame.Take(windowedFrame.Length / 2 + 1).ToArray());
         }
         return spectrogram;
+    }
+
+    protected override void PostFeatureExtraction(Song song)
+    {
+        song.Spectrogram.Clear();
     }
 }

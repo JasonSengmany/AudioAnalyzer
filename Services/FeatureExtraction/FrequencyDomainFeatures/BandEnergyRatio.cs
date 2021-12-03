@@ -29,7 +29,7 @@ public class BandEnergyRatioExtractor : IFeatureExtractor
         {
             throw new FeaturePipelineException("Spectrogram extractor required before band energy ratio extractor");
         }
-        song.BandEnergyRatios = CalculateBandEnergyRatio(song.Spectrogram, song.FrequencyStep);
+        song.AverageBandEnergyRatio = CalculateBandEnergyRatio(song.Spectrogram, song.FrequencyStep).Average(); ;
         return song;
     }
 

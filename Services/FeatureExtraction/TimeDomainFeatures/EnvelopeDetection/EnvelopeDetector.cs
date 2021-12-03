@@ -8,7 +8,7 @@ public abstract class EnvelopeDetector : IFeatureExtractor
     {
         using (var reader = MusicFileStreamFactory.GetStreamReader(song))
         {
-            song.AmplitudeEnvelope = GetAmplitudeEnvelope(reader);
+            song.AverageEnvelope = GetAmplitudeEnvelope(reader).Average();
         }
         return song;
     }

@@ -40,7 +40,7 @@ public class ZeroCrossingRateExtractor : IFeatureExtractor
         using (var reader = MusicFileStreamFactory.GetStreamReader(song))
         {
 
-            song.ZeroCrossingRates = GetZeroCrossingRates(reader);
+            song.AverageZeroCrossingRate = GetZeroCrossingRates(reader).Average();
 
         }
         return song;

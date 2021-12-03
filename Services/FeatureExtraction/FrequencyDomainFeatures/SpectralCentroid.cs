@@ -14,7 +14,7 @@ public class SpectralCentroidExtractor : IFeatureExtractor
             throw new FeaturePipelineException("Spectrogram extractor required before band energy ratio extractor");
         }
 
-        song.SpectralCentroids = GetSpectralCentroids(song.Spectrogram, song.FrequencyStep);
+        song.AverageSpectralCentroid = GetSpectralCentroids(song.Spectrogram, song.FrequencyStep).Average();
         return song;
     }
 

@@ -8,7 +8,7 @@ public class RootMeanSquareExtractor : IFeatureExtractor
     {
         using (var reader = MusicFileStreamFactory.GetStreamReader(song))
         {
-            song.RootMeanSquares = GetRootMeanSquares(reader);
+            song.AverageRootMeanSquare = GetRootMeanSquares(reader).Average();
         }
         return song;
     }
