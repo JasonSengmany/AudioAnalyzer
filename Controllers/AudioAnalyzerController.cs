@@ -26,7 +26,10 @@ public class AudioAnalyzerController
 
     private List<Song> InitialiseSongFromFile(string path)
     {
-        Songs.Add(new Song() { FilePath = path });
+        Songs.Add(new Song()
+        {
+            FilePath = path
+        });
         return Songs;
     }
 

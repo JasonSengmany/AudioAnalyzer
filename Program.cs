@@ -15,7 +15,7 @@ var shouldShowHelp = false;
 var extras = new List<string>();
 var options = new OptionSet {
     {"o|output=","Specify the output file path",v => savePath = v},
-    {"h|help","Show help message",h => shouldShowHelp= h!=null}
+    {"h|help","Show help message",h => shouldShowHelp = h!=null}
 };
 
 try
@@ -43,18 +43,20 @@ if (shouldShowHelp)
 
 
 var services = new ServiceCollection();
+
 services.AddSingleton<AudioAnalyzerController>();
 
 services.AddSingleton<FeatureExtractionPipeline>((serviceProvider) =>
     new FeatureExtractionPipeline(
+        new CustomLabelExtractor((song) => Path.GetFileNameWithoutExtension(song.FilePath)),
         new ZeroCrossingRateExtractor(),
         new RootMeanSquareExtractor(),
-        new CombFilterBeatDetector(),
-        new BasicEnvelopeDetector(),
         new FrequecySpectrogramExtractor(
             new BandEnergyRatioExtractor(),
             new MfccExtractor(),
-            new SpectralCentroidExtractor()
+            new SpectralCentroidExtractor(
+                new BandwidthExtractor()
+            )
         )
     )
 );

@@ -5,17 +5,26 @@ namespace AudioAnalyzer.FeatureExtraction;
 /// <summary>
 /// This class extracts the spectral centroid (sc) of a song which indicates how "bright" or "dark" a signal appears.
 /// </summary>
-public class SpectralCentroidExtractor : IFeatureExtractor
+public class SpectralCentroidExtractor : PrerequisiteExtractor
 {
-    public Song ExtractFeature(Song song)
+    public SpectralCentroidExtractor(params IFeatureExtractor[] dependentExtractors)
+        : base(dependentExtractors) { }
+
+    protected override void PreFeatureExtraction(Song song)
     {
         if (!song._metadata.ContainsKey("Spectrogram"))
         {
             throw new FeaturePipelineException("Spectrogram extractor required before band energy ratio extractor");
         }
-        song.AverageSpectralCentroid = GetSpectralCentroids((List<Complex[]>)song._metadata["Spectrogram"],
-                                                            (double)song._metadata["FrequencyStep"]).Average();
-        return song;
+        song._metadata.Add("SpectralCentroids", GetSpectralCentroids((List<Complex[]>)song._metadata["Spectrogram"],
+                                                            (double)song._metadata["FrequencyStep"]));
+        song.AverageSpectralCentroid = ((List<double>)song._metadata["SpectralCentroids"]).Average();
+    }
+
+    protected override void PostFeatureExtraction(Song song)
+    {
+        song._metadata.Remove("SpectralCentroids");
+
     }
 
     private List<double> GetSpectralCentroids(List<Complex[]> spectrogram, double frequencyStep)
