@@ -50,17 +50,21 @@ public class CombFilterBeatDetector : BeatDetector
         frequencySpectrum = frequencySpectrum.Take(frequencySpectrum.Length / 2 + 1)
             .ToArray();
 
-        if (reader.SampleRate != _cachedSampleRate)
-        {
-            _cachedSampleRate = reader.SampleRate;
-            _cachedTrainOfImpulses = ComputeTrainOfImpulses(ComputePeriods(reader.SampleRate),
-            differentiatedSample.Count);
-        }
 
         var energies = new List<double>();
-        foreach (var train in _cachedTrainOfImpulses)
+        lock (this)
         {
-            energies.Add(train.Zip(frequencySpectrum, (lhs, rhs) => (lhs * rhs).Magnitude).Sum());
+            if (reader.SampleRate != _cachedSampleRate)
+            {
+                _cachedSampleRate = reader.SampleRate;
+                _cachedTrainOfImpulses = ComputeTrainOfImpulses(ComputePeriods(reader.SampleRate),
+                differentiatedSample.Count);
+            }
+            foreach (var train in _cachedTrainOfImpulses)
+            {
+                energies.Add(train.Zip(frequencySpectrum, (lhs, rhs) => (lhs * rhs).Magnitude).Sum());
+            }
+
         }
 
         var index = energies.IndexOf(energies.Max());

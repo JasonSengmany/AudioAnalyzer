@@ -29,6 +29,7 @@ public class MfccExtractor : IFeatureExtractor
     private double _cachedFrequencyStep;
     private Matrix<double> _cachedMelFilter = Matrix<double>.Build.Dense(0, 0);
 
+    private readonly object _asyncProcessLock = new object();
     /// <summary>
     /// This constructor provides default values for the classes properties if not provided, based on generally 
     /// used audio processing parameters.
@@ -63,38 +64,39 @@ public class MfccExtractor : IFeatureExtractor
     /// <returns>A list of MFCCs for each frame found in the spectrogram</returns>
     private List<double[]> GetMFCC(List<Complex[]> spectrogram, double frequencyStep)
     {
-
-        if (spectrogram.First().Count() != _cachedFilterLength || frequencyStep != _cachedFrequencyStep)
-        {
-            _cachedFilterLength = spectrogram.First().Count();
-            _cachedFrequencyStep = frequencyStep;
-            _cachedMelFilter = ConstructMelFilterBands(_cachedFilterLength, _cachedFrequencyStep);
-        }
-
         var mfccs = new List<double[]>(spectrogram.Count());
-
-        foreach (var frame in spectrogram)
+        lock (this)
         {
 
-            // Obtain the periodogram estimate of the power spectrum
-            var powerSpectrum = frame.Select(
-                val => 1.0 / frame.Count() * Math.Pow(val.Magnitude, 2)).ToArray();
+            if (spectrogram.First().Count() != _cachedFilterLength || frequencyStep != _cachedFrequencyStep)
+            {
+                _cachedFilterLength = spectrogram.First().Count();
+                _cachedFrequencyStep = frequencyStep;
+                _cachedMelFilter = ConstructMelFilterBands(_cachedFilterLength, _cachedFrequencyStep);
+            }
+
+            foreach (var frame in spectrogram)
+            {
+
+                // Obtain the periodogram estimate of the power spectrum
+                var powerSpectrum = frame.Select(
+                    val => 1.0 / frame.Count() * Math.Pow(val.Magnitude, 2)).ToArray();
 
 
-            // Apply mel-filtering using matrix multiplication with filterbank 
-            var powerSpectrumVector = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(powerSpectrum);
-            var melFilteredPowerSpectrum = _cachedMelFilter.Multiply(powerSpectrumVector);
+                // Apply mel-filtering using matrix multiplication with filterbank 
+                var powerSpectrumVector = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(powerSpectrum);
+                var melFilteredPowerSpectrum = _cachedMelFilter.Multiply(powerSpectrumVector);
 
-            // Take the log of the mel-fitered powers
-            var logFilteredPowerSpectrum = melFilteredPowerSpectrum.Select(x => Math.Log10(1 + x));
+                // Take the log of the mel-fitered powers
+                var logFilteredPowerSpectrum = melFilteredPowerSpectrum.Select(x => Math.Log10(1 + x));
 
-            // Apply discrete cosine transform to return the MFCCs and only keep the lower coefficients
-            var dctResult = logFilteredPowerSpectrum.ToArray();
-            FastDctLee.Transform(dctResult);
+                // Apply discrete cosine transform to return the MFCCs and only keep the lower coefficients
+                var dctResult = logFilteredPowerSpectrum.ToArray();
+                FastDctLee.Transform(dctResult);
 
-            mfccs.Add(dctResult.Take(NumMfccs).ToArray());
+                mfccs.Add(dctResult.Take(NumMfccs).ToArray());
+            }
         }
-
         return mfccs;
     }
 

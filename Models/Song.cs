@@ -27,4 +27,9 @@ public record Song
     /// Used to pass variables between extractors
     /// </summary>
     internal Dictionary<string, dynamic> _metadata = new();
+
+    /// <summary>
+    /// Used during asynchronous operations on the song;
+    /// </summary>
+    internal object _songLock = new object();
 }

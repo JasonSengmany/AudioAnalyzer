@@ -57,40 +57,38 @@ public class ClearRiceBeatDetector : BeatDetector
             differentiatedEnvelopes.Add(FourierTransform.Radix2FFT(differentiatedSubband.ToArray()));
         }
 
-        if (reader.SampleRate != _cachedSampleRate)
-        {
-            _cachedTrainOfImpulses = ComputeTrainOfImpulses(ComputePeriods(reader.SampleRate),
-           differentiatedEnvelopes.First().Length);
-        }
-
-
-
-        // var plt = new ScottPlot.Plot();
         var energies = new List<double>();
-        foreach (var subband in differentiatedEnvelopes)
+        lock (this)
         {
-            var subbandEnergies = new List<double>(_cachedTrainOfImpulses.Count);
-            foreach (var train in _cachedTrainOfImpulses)
+            if (reader.SampleRate != _cachedSampleRate)
             {
-                // plt.AddSignal(subband.Select(x => x.Magnitude).ToArray());
-                // // plt.AddSignal(train.Select(x => x.Magnitude).ToArray());
-                // plt.SaveFig("Subbandandtrain.png");
-                // plt.Clear();
-                subbandEnergies.Add(train.Zip(subband, (lhs, rhs) => (lhs * rhs).Magnitude).Sum());
+                _cachedTrainOfImpulses = ComputeTrainOfImpulses(ComputePeriods(reader.SampleRate),
+               differentiatedEnvelopes.First().Length);
             }
+            foreach (var subband in differentiatedEnvelopes)
+            {
+                var subbandEnergies = new List<double>(_cachedTrainOfImpulses.Count);
+                foreach (var train in _cachedTrainOfImpulses)
+                {
+                    // plt.AddSignal(subband.Select(x => x.Magnitude).ToArray());
+                    // // plt.AddSignal(train.Select(x => x.Magnitude).ToArray());
+                    // plt.SaveFig("Subbandandtrain.png");
+                    // plt.Clear();
+                    subbandEnergies.Add(train.Zip(subband, (lhs, rhs) => (lhs * rhs).Magnitude).Sum());
+                }
 
-            // plt.AddSignal(subbandEnergies.ToArray());
-            // plt.SaveFig("Energies.png");
-            if (energies.Count == 0)
-            {
-                energies = subbandEnergies;
-            }
-            else
-            {
-                energies = energies.Zip(subbandEnergies, (lhs, rhs) => lhs + rhs).ToList();
+                // plt.AddSignal(subbandEnergies.ToArray());
+                // plt.SaveFig("Energies.png");
+                if (energies.Count == 0)
+                {
+                    energies = subbandEnergies;
+                }
+                else
+                {
+                    energies = energies.Zip(subbandEnergies, (lhs, rhs) => lhs + rhs).ToList();
+                }
             }
         }
-
 
         var index = energies.IndexOf(energies.Max());
         return _lowerBPM + index;

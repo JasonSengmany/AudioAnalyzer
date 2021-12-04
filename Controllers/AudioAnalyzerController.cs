@@ -50,10 +50,33 @@ public class AudioAnalyzerController
         int top = Console.CursorTop;
         foreach (var song in Songs)
         {
-            Console.SetCursorPosition(left, top);
-            Console.Write($"Processing song {Songs.IndexOf(song) + 1} out of {Songs.Count}");
             FeatureExtractionPipeline.Process(song);
+            Console.SetCursorPosition(left, top);
+            Console.Write($"Completed {Songs.IndexOf(song) + 1} songs out of {Songs.Count}");
+
         }
+        Console.WriteLine("\nProcessing complete!");
+    }
+
+    public async Task ProcessFeaturesAsync()
+    {
+        int left = Console.CursorLeft;
+        int top = Console.CursorTop;
+        var taskList = new List<Task>();
+        var completedSongs = 0;
+        foreach (var song in Songs)
+        {
+            taskList.Add(Task.Run(async () =>
+              {
+                  await FeatureExtractionPipeline.ProcessAsync(song);
+                  lock (this)
+                  {
+                      Console.SetCursorPosition(left, top);
+                      Console.Write($"Completed {++completedSongs} songs out of {Songs.Count}");
+                  }
+              }));
+        }
+        await Task.WhenAll(taskList);
         Console.WriteLine("\nProcessing complete!");
     }
     public async Task SaveFeatures(string path)

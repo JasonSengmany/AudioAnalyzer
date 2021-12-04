@@ -6,6 +6,14 @@ public class ZeroCrossingRateExtractor : IFeatureExtractor
 {
     public int BlockLength { get; set; } = 2048;
 
+    public Song ExtractFeature(Song song)
+    {
+        using (var reader = MusicFileStreamFactory.GetStreamReader(song))
+        {
+            song.AverageZeroCrossingRate = GetZeroCrossingRates(reader).Average();
+        }
+        return song;
+    }
     public List<double> GetZeroCrossingRates(IMusicFileStream reader)
     {
         var sampleBlock = reader.ReadBlock(BlockLength);
@@ -35,14 +43,5 @@ public class ZeroCrossingRateExtractor : IFeatureExtractor
         return 0.5 * total / (meanChannelDataSign.Length - 1);
     }
 
-    public Song ExtractFeature(Song song)
-    {
-        using (var reader = MusicFileStreamFactory.GetStreamReader(song))
-        {
 
-            song.AverageZeroCrossingRate = GetZeroCrossingRates(reader).Average();
-
-        }
-        return song;
-    }
 }

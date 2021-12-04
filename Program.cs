@@ -48,9 +48,10 @@ services.AddSingleton<AudioAnalyzerController>();
 
 services.AddSingleton<FeatureExtractionPipeline>((serviceProvider) =>
     new FeatureExtractionPipeline(
-        new CustomLabelExtractor((song) => Path.GetFileNameWithoutExtension(song.FilePath)),
+        new DirectoryLabelExtractor(),
         new ZeroCrossingRateExtractor(),
         new RootMeanSquareExtractor(),
+        new BasicEnvelopeDetector(),
         new FrequecySpectrogramExtractor(
             new BandEnergyRatioExtractor(),
             new MfccExtractor(),
@@ -78,7 +79,13 @@ var serviceProvider = services.BuildServiceProvider();
 
 var controller = serviceProvider.GetRequiredService<AudioAnalyzerController>();
 var songs = controller.LoadSongs(args[0]);
-controller.ProcessFeatures();
+// var watch = new Stopwatch();
+// watch.Start();
+await controller.ProcessFeaturesAsync();
+// watch.Stop();
+// Console.WriteLine(watch.ElapsedMilliseconds);
 await controller.SaveFeatures(savePath);
 
 return 0;
+
+

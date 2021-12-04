@@ -22,4 +22,14 @@ public class FeatureExtractionPipeline
         }
         return song;
     }
+
+    public async Task<Song> ProcessAsync(Song song)
+    {
+        var taskList = new List<Task<Song>>();
+        foreach (var featurizer in _featurizers)
+        {
+            taskList.Add(Task.Run(() => featurizer.ExtractFeature(song)));
+        }
+        return (await Task.WhenAll<Song>(taskList)).First();
+    }
 }
