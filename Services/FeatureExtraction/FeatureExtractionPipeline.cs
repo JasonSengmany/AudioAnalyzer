@@ -2,7 +2,7 @@ namespace AudioAnalyzer.FeatureExtraction;
 
 public class FeatureExtractionPipeline
 {
-    public List<IFeatureExtractor> _featurizers { get; private set; } = new() { new TimeSpanExtractor() };
+    public List<IFeatureExtractor> _featurizers { get; private set; } = new() { };
 
     public FeatureExtractionPipeline() { }
     public FeatureExtractionPipeline(params IFeatureExtractor[] featurizers)

@@ -1,7 +1,6 @@
 
 using System.Globalization;
 using CsvHelper;
-using CsvHelper.Configuration;
 
 namespace AudioAnalyzer.Services;
 
@@ -25,7 +24,22 @@ public class CsvPersistenceService : IPersistenceService
         using (var writer = new StreamWriter(path))
         using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
         {
-            await csv.WriteRecordsAsync(songs);
+
+            csv.WriteHeader<Song>();
+            for (var i = 1; i <= songs.First().MFCC.Length; i++)
+            {
+                csv.WriteField($"MFCC Coeff {i}");
+            }
+            await csv.NextRecordAsync();
+            foreach (var song in songs)
+            {
+                csv.WriteRecord(song);
+                foreach (var mfcc in song.MFCC)
+                {
+                    csv.WriteField(mfcc);
+                }
+                await csv.NextRecordAsync();
+            }
         }
     }
     // public sealed class SongMap : ClassMap<Song>
@@ -33,9 +47,7 @@ public class CsvPersistenceService : IPersistenceService
     //     public SongMap()
     //     {
     //         AutoMap(CultureInfo.InvariantCulture);
-    //         Map(song => song.BeatsPerMinute).Optional();
-    //         Map(song => song.AverageBandEnergyRatio).Optional();
-    //         Map(song => song.AverageBandwidth).Validate(field => field.Field != null);
+    //         Map(song => song.MFCC).Index(typeof(Song).GetProperties().Length);
     //     }
     // }
 }

@@ -1,8 +1,8 @@
 ﻿using AudioAnalyzer.FeatureExtraction;
 using AudioAnalyzer.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Mono.Options;
-
 
 if (args.Count() == 0 || !File.Exists(args[0]) && !Directory.Exists(args[0]))
 {
@@ -10,12 +10,13 @@ if (args.Count() == 0 || !File.Exists(args[0]) && !Directory.Exists(args[0]))
     return -1;
 }
 
-var savePath = "results.json";
+var savePath = "results.csv";
 var shouldShowHelp = false;
 var extras = new List<string>();
 var options = new OptionSet {
-    {"o|output=","Specify the output file path",v => savePath = v},
+    {"o|output=","Specify the output file path. Existing files will be overwritten.",v => savePath = v},
     {"h|help","Show help message",h => shouldShowHelp = h!=null}
+
 };
 
 try
@@ -49,21 +50,17 @@ services.AddSingleton<AudioAnalyzerController>();
 services.AddSingleton<FeatureExtractionPipeline>((serviceProvider) =>
     new FeatureExtractionPipeline(
         new DirectoryLabelExtractor(),
-        new ZeroCrossingRateExtractor(),
-        new RootMeanSquareExtractor(),
-        new BasicEnvelopeDetector(),
-        new FrequecySpectrogramExtractor(
-            new BandEnergyRatioExtractor(),
-            new MfccExtractor(),
-            new SpectralCentroidExtractor(
-                new BandwidthExtractor()
-            )
-        )
+        new ZeroCrossingRateExtractor()
     )
 );
 
+
 switch (Path.GetExtension(savePath))
 {
+    case (".db"):
+        services.AddSqlite<SongDbContext>($"Data Source={savePath}");
+        services.AddScoped<IPersistenceService, SqlitePersistenceService>();
+        break;
     case (".csv"):
         services.AddScoped<IPersistenceService, CsvPersistenceService>();
         break;
@@ -75,15 +72,14 @@ switch (Path.GetExtension(savePath))
 }
 
 var serviceProvider = services.BuildServiceProvider();
-
+var context = serviceProvider.GetService<SongDbContext>();
+if (context != null) context.Database.Migrate();
 
 var controller = serviceProvider.GetRequiredService<AudioAnalyzerController>();
 var songs = controller.LoadSongs(args[0]);
-// var watch = new Stopwatch();
-// watch.Start();
+var watch = Stopwatch.StartNew();
 await controller.ProcessFeaturesAsync();
-// watch.Stop();
-// Console.WriteLine(watch.ElapsedMilliseconds);
+Console.WriteLine(watch.ElapsedMilliseconds);
 await controller.SaveFeatures(savePath);
 
 return 0;
