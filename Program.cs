@@ -59,6 +59,7 @@ services.AddSingleton<FeatureExtractionPipeline>((serviceProvider) =>
 {
     var pipe = new FeatureExtractionPipeline();
     pipe.Load(new BandwidthExtractor());
+    pipe.Load(new MfccExtractor());
     return pipe;
 });
 

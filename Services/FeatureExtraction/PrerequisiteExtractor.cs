@@ -61,9 +61,19 @@ public abstract class PrerequisiteExtractor : IFeatureExtractor
     /// <param name="prerequisites"></param>
     internal void AddChild(IFeatureExtractor childExtractor, Stack<string> prerequisites)
     {
+        if (prerequisites.Count == 0)
+        {
+            AddChild(childExtractor);
+            return;
+        }
         var parentPrerequisite = prerequisites.Pop();
         var parentPrerequisiteType = Type.GetType($"AudioAnalyzer.FeatureExtraction.{parentPrerequisite}");
         if (parentPrerequisiteType is null) return;
+        if (this.GetType().IsAssignableTo(parentPrerequisiteType))
+        {
+            AddChild(childExtractor);
+            return;
+        }
         var parentFeaturizer = DependentExtractors.Where((featurizer) =>
         {
             return featurizer.GetType().IsAssignableTo(parentPrerequisiteType);
