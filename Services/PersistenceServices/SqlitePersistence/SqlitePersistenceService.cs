@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
 
 namespace AudioAnalyzer.Services;
 public class SongDbContext : DbContext
@@ -24,6 +23,13 @@ public class SqlitePersistenceService : IPersistenceService
     {
         _songDb = dbContext;
     }
+
+    public async Task Append(List<Song> songs, string path)
+    {
+        await _songDb.Songs.AddRangeAsync(songs);
+        await _songDb.SaveChangesAsync();
+    }
+
     public async Task<List<Song>> Load(string path)
     {
         return await _songDb.Songs.ToListAsync();

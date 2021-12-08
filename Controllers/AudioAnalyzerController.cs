@@ -6,10 +6,11 @@ using AudioAnalyzer.Services;
 /// </summary>
 public class AudioAnalyzerController
 {
-    public FeatureExtractionPipeline FeatureExtractionPipeline;
-    private IPersistenceService _persistenceService;
+    public readonly FeatureExtractionPipeline FeatureExtractionPipeline;
+    private readonly IPersistenceService _persistenceService;
     public List<Song> Songs { get; init; } = new();
-    public AudioAnalyzerController(FeatureExtractionPipeline featureExtractionPipeline, IPersistenceService persistenceService)
+    public AudioAnalyzerController(FeatureExtractionPipeline featureExtractionPipeline,
+                                   IPersistenceService persistenceService)
     {
         FeatureExtractionPipeline = featureExtractionPipeline;
         _persistenceService = persistenceService;
@@ -19,7 +20,7 @@ public class AudioAnalyzerController
     /// This method loads the songs from a given path or directory.
     /// </summary>
     /// <param name="path"></param>
-    /// <returns></returns>
+    /// <returns>List of loaded songs</returns>
     public List<Song> LoadSongs(string path)
     {
         if (Path.GetExtension(path) != null && File.Exists(path)
@@ -33,6 +34,17 @@ public class AudioAnalyzerController
         }
         throw new ArgumentException("Invalid path supplied.");
 
+    }
+
+    public List<Song> LoadSongs(IEnumerable<Song> songs)
+    {
+        Songs.AddRange(songs);
+        return Songs;
+    }
+
+    public void ClearSongs()
+    {
+        Songs.Clear();
     }
 
     private List<Song> InitialiseSongFromFile(string path)
@@ -59,7 +71,7 @@ public class AudioAnalyzerController
     /// This method processes all loaded songs through the supplied feature extraction pipeline
     /// At completion the song will be populated with its extracted features.
     /// </summary>
-    public void ProcessFeatures()
+    public List<Song> ProcessFeatures()
     {
         int left = Console.CursorLeft;
         int top = Console.CursorTop;
@@ -71,6 +83,7 @@ public class AudioAnalyzerController
 
         }
         Console.WriteLine("\nProcessing complete!");
+        return Songs;
     }
 
     /// <summary>
@@ -78,26 +91,27 @@ public class AudioAnalyzerController
     /// asynchronously
     /// </summary>
     /// <returns></returns>
-    public async Task ProcessFeaturesAsync()
+    public async Task<List<Song>> ProcessFeaturesAsync()
     {
-        int left = Console.CursorLeft;
-        int top = Console.CursorTop;
+        // int left = Console.CursorLeft;
+        // int top = Console.CursorTop;
         var taskList = new List<Task>();
-        var completedSongs = 0;
+        // var completedSongs = 0;
         foreach (var song in Songs)
         {
             taskList.Add(Task.Run(async () =>
               {
                   await FeatureExtractionPipeline.ProcessAsync(song);
-                  lock (this)
-                  {
-                      Console.SetCursorPosition(left, top);
-                      Console.Write($"Completed {++completedSongs} songs out of {Songs.Count}");
-                  }
+                  //   lock (this)
+                  //   {
+                  //   Console.SetCursorPosition(left, top);
+                  //   Console.Write($"Completed {++completedSongs} songs out of {Songs.Count}");
+                  //   }
               }));
         }
         await Task.WhenAll(taskList);
         Console.WriteLine("\nProcessing complete!");
+        return Songs;
     }
 
     /// <summary>
@@ -108,6 +122,16 @@ public class AudioAnalyzerController
     public async Task SaveFeatures(string path)
     {
         await _persistenceService.Save(Songs, path);
+    }
+
+    /// <summary>
+    /// Appends the extracted features to a file
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public async Task AppendFeatures(string path)
+    {
+        await _persistenceService.Append(Songs, path);
     }
 
     /// <summary>

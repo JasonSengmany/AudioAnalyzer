@@ -4,6 +4,21 @@ using System.Text.Json.Serialization;
 namespace AudioAnalyzer.Services;
 public class JsonPersistenceService : IPersistenceService
 {
+    public async Task Append(List<Song> songs, string path)
+    {
+        if (!File.Exists(path) && Path.GetExtension(path) != ".json")
+        {
+            throw new ArgumentException("File path does not exist");
+        }
+        using FileStream openedStream = File.Open(path, FileMode.Append);
+        JsonSerializerOptions options = new()
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
+        };
+        await JsonSerializer.SerializeAsync(openedStream, songs, options);
+        await openedStream.DisposeAsync();
+    }
+
     public async Task<List<Song>> Load(string path)
     {
         if (!File.Exists(path) && Path.GetExtension(path) != ".json")

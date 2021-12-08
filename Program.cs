@@ -9,12 +9,18 @@ if (args.Count() == 0 || !File.Exists(args[0]) && !Directory.Exists(args[0]))
     Console.WriteLine("Usage: AudioAnalyzer.exe </pathToMusicFileOrDirectory> [OPTIONS]+");
     return -1;
 }
-
+var saveMode = FileMode.Create;
 var savePath = "results.csv";
 var shouldShowHelp = false;
 var extras = new List<string>();
 var options = new OptionSet {
-    {"o|output=","Specify the output file path. Existing files will be overwritten.",v => savePath = v},
+    {"o|output=","Specify the output file path to write results. Existing files will be overwritten.",v => savePath = v},
+    {"a|append=","Specify the output file path to append results to.",v =>
+        {
+            saveMode = FileMode.Append;
+            savePath = v;
+        }
+    },
     {"h|help","Show help message",h => shouldShowHelp = h!=null}
 
 };
@@ -80,7 +86,16 @@ var songs = controller.LoadSongs(args[0]);
 var watch = Stopwatch.StartNew();
 await controller.ProcessFeaturesAsync();
 Console.WriteLine(watch.ElapsedMilliseconds);
-await controller.SaveFeatures(savePath);
+
+switch (saveMode)
+{
+    case (FileMode.Create):
+        await controller.SaveFeatures(savePath);
+        break;
+    case (FileMode.Append):
+        await controller.AppendFeatures(savePath);
+        break;
+}
 
 return 0;
 

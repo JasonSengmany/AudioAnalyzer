@@ -1,6 +1,8 @@
 using System.Numerics;
 
 namespace AudioAnalyzer.FeatureExtraction;
+
+[PrerequisiteExtractors("SpectralCentroidExtractor")]
 public class BandwidthExtractor : IFeatureExtractor
 {
     public Song ExtractFeature(Song song)
