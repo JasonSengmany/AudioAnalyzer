@@ -5,9 +5,10 @@ namespace AudioAnalyzer.FeatureExtraction;
 /// <summary>
 /// This class extracts the spectral centroid (sc) of a song which indicates how "bright" or "dark" a signal appears.
 /// </summary>
-[PrerequisiteExtractors("FrequencySpectrogramExtractor")]
+[PrerequisiteExtractor(nameof(FrequencySpectrogramExtractor))]
 public class SpectralCentroidExtractor : PrerequisiteExtractor
 {
+    public SpectralCentroidExtractor() { }
     public SpectralCentroidExtractor(params IFeatureExtractor[] dependentExtractors)
         : base(dependentExtractors) { }
 

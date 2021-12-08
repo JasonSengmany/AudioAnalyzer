@@ -10,12 +10,14 @@ namespace AudioAnalyzer.FeatureExtraction;
 /// <c>SpectralCentroidExtractor</c> and <c>MfccExtractor</c>. The spectrogram is
 /// cleared after all child extractors have executed.
 /// </summary>
-public class FrequecySpectrogramExtractor : PrerequisiteExtractor
+public class FrequencySpectrogramExtractor : PrerequisiteExtractor
 {
     public int FrameSize { get; set; } = 2048;
     public int HopLength { get; set; } = 512;
     public WindowFunction window { get; set; } = new HammingWindow();
-    public FrequecySpectrogramExtractor(params IFeatureExtractor[] dependentExtractors)
+
+    public FrequencySpectrogramExtractor() { }
+    public FrequencySpectrogramExtractor(params IFeatureExtractor[] dependentExtractors)
     : base(dependentExtractors) { }
 
     protected override void PreFeatureExtraction(Song song)

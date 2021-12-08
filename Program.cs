@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Mono.Options;
 
+
+
 if (args.Count() == 0 || !File.Exists(args[0]) && !Directory.Exists(args[0]))
 {
     Console.WriteLine("Usage: AudioAnalyzer.exe </pathToMusicFileOrDirectory> [OPTIONS]+");
@@ -54,11 +56,11 @@ var services = new ServiceCollection();
 services.AddSingleton<AudioAnalyzerController>();
 
 services.AddSingleton<FeatureExtractionPipeline>((serviceProvider) =>
-    new FeatureExtractionPipeline(
-        new DirectoryLabelExtractor(),
-        new ZeroCrossingRateExtractor()
-    )
-);
+{
+    var pipe = new FeatureExtractionPipeline();
+    pipe.Load(new BandwidthExtractor());
+    return pipe;
+});
 
 
 switch (Path.GetExtension(savePath))

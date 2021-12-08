@@ -55,6 +55,36 @@ public abstract class PrerequisiteExtractor : IFeatureExtractor
     }
 
     /// <summary>
+    /// Internal method to allow loading of extractors consisting of prerequisite chains.
+    /// </summary>
+    /// <param name="childExtractor"></param>
+    /// <param name="prerequisites"></param>
+    internal void AddChild(IFeatureExtractor childExtractor, Stack<string> prerequisites)
+    {
+        var parentPrerequisite = prerequisites.Pop();
+        var parentPrerequisiteType = Type.GetType($"AudioAnalyzer.FeatureExtraction.{parentPrerequisite}");
+        if (parentPrerequisiteType is null) return;
+        var parentFeaturizer = DependentExtractors.Where((featurizer) =>
+        {
+            return featurizer.GetType().IsAssignableTo(parentPrerequisiteType);
+        }).FirstOrDefault();
+        if (parentFeaturizer is null)
+        {
+            if (!parentPrerequisiteType.IsAbstract)
+            {
+                var initialisedPrerequisite = Activator.CreateInstance(parentPrerequisiteType);
+                if (initialisedPrerequisite is null) return;
+                ((PrerequisiteExtractor)initialisedPrerequisite).AddChild(childExtractor);
+                DependentExtractors.Add(((PrerequisiteExtractor)initialisedPrerequisite));
+            }
+        }
+        else
+        {
+            ((PrerequisiteExtractor)parentFeaturizer).AddChild(childExtractor, prerequisites);
+        }
+    }
+
+    /// <summary>
     /// Method to remove dependent extractors from the composite
     /// </summary>
     /// <param name="childExtractor"></param>

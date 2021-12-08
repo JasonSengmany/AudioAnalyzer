@@ -16,14 +16,34 @@ public class FeatureExtractorsAttribute : Attribute
 
 
 /// <summary>
-/// Used to indiicate prerequisite feature extractors for a given extractor.
+/// Used to indiicate prerequisite feature extractor for a given extractor.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
-public class PrerequisiteExtractorsAttribute : Attribute
+public class PrerequisiteExtractorAttribute : Attribute
 {
-    public List<string> PrerequisiteExtractors { get; init; } = new();
-    public PrerequisiteExtractorsAttribute(params string[] featureExtractors)
+    public string PrerequisiteExtractor { get; init; } = String.Empty;
+    public PrerequisiteExtractorAttribute(string featureExtractor)
     {
-        PrerequisiteExtractors.AddRange(featureExtractors);
+        PrerequisiteExtractor = featureExtractor;
     }
+
+    public Stack<string> GetPrerequisiteStack()
+    {
+        var prerequisiteStack = new Stack<String>();
+        prerequisiteStack.Push(PrerequisiteExtractor);
+        var nextPrerequisite = PrerequisiteExtractor;
+        var prerequisite = Type.GetType($"AudioAnalyzer.FeatureExtraction.{nextPrerequisite}");
+        if (prerequisite is null) throw new FeaturePipelineException("Unable to resolve prerequisite");
+        var attr = Attribute.GetCustomAttribute(prerequisite, typeof(PrerequisiteExtractorAttribute));
+        while (attr != null)
+        {
+            nextPrerequisite = ((PrerequisiteExtractorAttribute)attr).PrerequisiteExtractor;
+            prerequisiteStack.Push(nextPrerequisite);
+            prerequisite = Type.GetType($"AudioAnalyzer.FeatureExtraction.{nextPrerequisite}");
+            if (prerequisite is null) throw new FeaturePipelineException("Unable to resolve prerequisite");
+            attr = Attribute.GetCustomAttribute(prerequisite, typeof(PrerequisiteExtractorAttribute));
+        }
+        return prerequisiteStack;
+    }
+
 }

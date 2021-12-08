@@ -7,6 +7,7 @@ namespace AudioAnalyzer.FeatureExtraction;
 /// A spectrogram is expected to have been extracted from the song and dictates the framelength and hoplength of the 
 /// band energy ratio extraction.
 /// </summary>
+[PrerequisiteExtractor(nameof(FrequencySpectrogramExtractor))]
 public class BandEnergyRatioExtractor : IFeatureExtractor
 {
     /// <summary>

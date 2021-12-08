@@ -7,7 +7,7 @@ namespace AudioAnalyzer.FeatureExtraction;
 /// <summary>
 /// Class <c>MfccExtractor</c> is used to extract mel-frequency cepstral coefficients from a <c>Song</c>
 /// </summary>
-[PrerequisiteExtractors("FrequencySpectrogramExtractor")]
+[PrerequisiteExtractor(nameof(FrequencySpectrogramExtractor))]
 public class MfccExtractor : IFeatureExtractor
 {
     /// <value> Property <c>NumMelBands</c> represents the number of mel-scaled frequency bins
