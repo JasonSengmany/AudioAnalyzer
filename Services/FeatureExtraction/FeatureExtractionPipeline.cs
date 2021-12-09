@@ -21,7 +21,6 @@ public class FeatureExtractionPipeline
     /// Loads a new feature extractor based on the class name.
     /// </summary>
     /// <param name="featurizerName">Name of the featurizer class</param>
-    /// <returns>true if successfully loaded and false otherwise</returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="NullReferenceException"></exception>
     public void Load(string featurizerName)
@@ -60,17 +59,22 @@ public class FeatureExtractionPipeline
     /// Loads a feature extractors
     /// </summary>
     /// <param name="featurizers"></param>
-    /// <returns>true on success otherwise false if an extractor had failed to be loaded</returns>
     public void Load(IFeatureExtractor featurizer)
     {
         var prerequisites = PrerequisiteExtractorAttribute.GetPrerequisites(featurizer);
         if (prerequisites.Count != 0)
         {
             LoadFeaturizerWithPrerequisite(featurizer, prerequisites);
+            return;
         }
         _featurizers.Add(featurizer);
     }
 
+    /// <summary>
+    /// Tries to load the <c>IFeatureExtractor</c> into the feature extraction pipeline.
+    /// </summary>
+    /// <param name="featurizer">Instance of an <c>IFeatureExtractor</c></param>
+    /// <returns><c>true</c> if featurizer was succesfully loaded; otherwise <c>false</c> </returns>
     public bool TryLoad(IFeatureExtractor featurizer)
     {
         try
@@ -115,6 +119,16 @@ public class FeatureExtractionPipeline
         }
     }
 
+    /// <summary>
+    /// Initializes an instance of the root prerequisite feature extractor, load its dependent child 
+    /// extractor, and finally add it to the feature extraction pipeline. 
+    /// </summary>
+    /// <param name="featurizer">Feature extractor to include</param>
+    /// <param name="prerequisites">Stack of prerequisite extractors with the next required 
+    /// prerequisite on the top excluding the current root to be initialised</param>
+    /// <param name="rootPrerequisiteType">Type of the root feature extractor to be included into the feature 
+    /// extraction pipeline</param>
+    /// <exception cref="FeaturePipelineException"></exception>
     private void InitializeRootPrerequisiteAndLoad(IFeatureExtractor featurizer, Stack<string> prerequisites, Type rootPrerequisiteType)
     {
         if (!rootPrerequisiteType.IsAbstract)
@@ -123,6 +137,7 @@ public class FeatureExtractionPipeline
             if (initialisedPrerequisite is null) throw new FeaturePipelineException("Unable to initialize prerequisite");
             ((PrerequisiteExtractor)initialisedPrerequisite).AddChild(featurizer, prerequisites);
             _featurizers.Add((PrerequisiteExtractor)initialisedPrerequisite);
+            return;
         }
         throw new FeaturePipelineException("Unable to initialize abstract extractor class");
     }
