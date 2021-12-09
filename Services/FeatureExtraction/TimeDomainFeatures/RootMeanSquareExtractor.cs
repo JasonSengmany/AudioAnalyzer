@@ -1,6 +1,6 @@
-using AudioAnalyzer.FeatureExtraction;
 using AudioAnalyzer.Services;
 
+namespace AudioAnalyzer.FeatureExtraction;
 public class RootMeanSquareExtractor : IFeatureExtractor
 {
     public int BlockLength { get; set; } = 2048;

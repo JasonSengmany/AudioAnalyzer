@@ -44,6 +44,11 @@ public class WaveFileStream : IMusicFileStream
         _reader = new(filename);
     }
 
+    public WaveFileStream(Stream stream)
+    {
+        _reader = new(stream);
+    }
+
     public float[] ReadNextSampleFrame()
     {
         return _reader.ReadNextSampleFrame();

@@ -1,5 +1,6 @@
 using AudioAnalyzer.FeatureExtraction;
 using AudioAnalyzer.Services;
+using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// Controller class to orchestrate loading of songs and processing of features.
@@ -8,12 +9,16 @@ public class AudioAnalyzerController
 {
     public readonly FeatureExtractionPipeline FeatureExtractionPipeline;
     private readonly IPersistenceService _persistenceService;
+
+    private readonly ILogger<AudioAnalyzerController> _logger;
     public List<Song> Songs { get; init; } = new();
     public AudioAnalyzerController(FeatureExtractionPipeline featureExtractionPipeline,
-                                   IPersistenceService persistenceService)
+                                   IPersistenceService persistenceService,
+                                   ILogger<AudioAnalyzerController> logger)
     {
         FeatureExtractionPipeline = featureExtractionPipeline;
         _persistenceService = persistenceService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -23,17 +28,21 @@ public class AudioAnalyzerController
     /// <returns>List of loaded songs</returns>
     public List<Song> LoadSongs(string path)
     {
-        if (Path.GetExtension(path) != null && File.Exists(path)
-            && MusicFileStreamFactory.SupportedFormats.Contains(Path.GetExtension(path)))
+        if (IsValidSongFile(path))
         {
             return InitialiseSongFromFile(path);
         }
-        else if (Directory.Exists(path))
+        if (Directory.Exists(path))
         {
             return InitialiseSongsFromDirectory(path);
         }
         throw new ArgumentException("Invalid path supplied.");
+    }
 
+    private static bool IsValidSongFile(string path)
+    {
+        return Path.GetExtension(path) != null && File.Exists(path)
+                    && MusicFileStreamFactory.SupportedFormats.Contains(Path.GetExtension(path));
     }
 
     public List<Song> LoadSongs(IEnumerable<Song> songs)
@@ -49,10 +58,7 @@ public class AudioAnalyzerController
 
     private List<Song> InitialiseSongFromFile(string path)
     {
-        Songs.Add(new Song()
-        {
-            FilePath = path
-        });
+        Songs.Add(new Song { FilePath = path });
         return Songs;
     }
 
@@ -80,9 +86,8 @@ public class AudioAnalyzerController
             FeatureExtractionPipeline.Process(song);
             Console.SetCursorPosition(left, top);
             Console.Write($"Completed {Songs.IndexOf(song) + 1} songs out of {Songs.Count}");
-
         }
-        Console.WriteLine("\nProcessing complete!");
+        _logger.LogInformation($"Processing of {Songs.Count} songs completed");
         return Songs;
     }
 
@@ -93,24 +98,17 @@ public class AudioAnalyzerController
     /// <returns></returns>
     public async Task<List<Song>> ProcessFeaturesAsync()
     {
-        // int left = Console.CursorLeft;
-        // int top = Console.CursorTop;
+        var watch = Stopwatch.StartNew();
         var taskList = new List<Task>();
-        // var completedSongs = 0;
         foreach (var song in Songs)
         {
             taskList.Add(Task.Run(async () =>
               {
                   await FeatureExtractionPipeline.ProcessAsync(song);
-                  //   lock (this)
-                  //   {
-                  //   Console.SetCursorPosition(left, top);
-                  //   Console.Write($"Completed {++completedSongs} songs out of {Songs.Count}");
-                  //   }
               }));
         }
         await Task.WhenAll(taskList);
-        Console.WriteLine("\nProcessing complete!");
+        _logger.LogInformation($"Processing completed in {watch.ElapsedMilliseconds} ms");
         return Songs;
     }
 

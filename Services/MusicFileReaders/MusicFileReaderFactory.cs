@@ -7,6 +7,6 @@ public static class MusicFileStreamFactory
         ".wav" => new WaveFileStream(song.FilePath),
         ".flac" => new FlacFileStream(song.FilePath),
         ".mp3" => new MP3FileStream(song.FilePath),
-        _ => throw new ArgumentException($"Unsupported file type {Path.GetExtension(song.FilePath)}"),
+        _ => throw new FileFormatException($"Unsupported file type {Path.GetExtension(song.FilePath)}"),
     };
 }

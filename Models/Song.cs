@@ -11,7 +11,7 @@ public record Song
 {
     internal string FilePath { get; init; } = String.Empty;
 
-    [FeatureExtractors(nameof(DirectoryLabelExtractor), nameof(CustomLabelExtractor))]
+    [FeatureExtractors(nameof(DirectoryLabelExtractor))]
     public string Label { get; set; } = String.Empty;
 
     [FeatureExtractors(nameof(TimeSpanExtractor))]
@@ -26,7 +26,7 @@ public record Song
     public double? AverageZeroCrossingRate { get; set; }
 
     [Optional]
-    [FeatureExtractors(nameof(ZeroCrossingRateExtractor))]
+    [FeatureExtractors(nameof(RootMeanSquareExtractor))]
     public double? AverageRootMeanSquare { get; set; }
 
     [Optional]

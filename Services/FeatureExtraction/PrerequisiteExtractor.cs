@@ -59,38 +59,42 @@ public abstract class PrerequisiteExtractor : IFeatureExtractor
     /// </summary>
     /// <param name="childExtractor"></param>
     /// <param name="prerequisites"></param>
-    internal void AddChild(IFeatureExtractor childExtractor, Stack<string> prerequisites)
+    /// <returns>true on success otherwise false if an extractor had failed to be loaded</returns>
+    internal bool AddChild(IFeatureExtractor childExtractor, Stack<string> prerequisites)
     {
         if (prerequisites.Count == 0)
         {
             AddChild(childExtractor);
-            return;
+            return true;
         }
         var parentPrerequisite = prerequisites.Pop();
         var parentPrerequisiteType = Type.GetType($"AudioAnalyzer.FeatureExtraction.{parentPrerequisite}");
-        if (parentPrerequisiteType is null) return;
+        if (parentPrerequisiteType is null) return false;
         if (this.GetType().IsAssignableTo(parentPrerequisiteType))
         {
             AddChild(childExtractor);
-            return;
+            return true;
         }
         var parentFeaturizer = DependentExtractors.Where((featurizer) =>
         {
             return featurizer.GetType().IsAssignableTo(parentPrerequisiteType);
         }).FirstOrDefault();
+
         if (parentFeaturizer is null)
         {
             if (!parentPrerequisiteType.IsAbstract)
             {
                 var initialisedPrerequisite = Activator.CreateInstance(parentPrerequisiteType);
-                if (initialisedPrerequisite is null) return;
+                if (initialisedPrerequisite is null) return false;
                 ((PrerequisiteExtractor)initialisedPrerequisite).AddChild(childExtractor);
                 DependentExtractors.Add(((PrerequisiteExtractor)initialisedPrerequisite));
+                return true;
             }
+            return false;
         }
         else
         {
-            ((PrerequisiteExtractor)parentFeaturizer).AddChild(childExtractor, prerequisites);
+            return ((PrerequisiteExtractor)parentFeaturizer).AddChild(childExtractor, prerequisites);
         }
     }
 

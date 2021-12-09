@@ -2,8 +2,8 @@
 using AudioAnalyzer.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Mono.Options;
-
 
 
 if (args.Count() == 0 || !File.Exists(args[0]) && !Directory.Exists(args[0]))
@@ -50,7 +50,6 @@ if (shouldShowHelp)
     return 0;
 }
 
-
 var services = new ServiceCollection();
 
 services.AddSingleton<AudioAnalyzerController>();
@@ -58,11 +57,11 @@ services.AddSingleton<AudioAnalyzerController>();
 services.AddSingleton<FeatureExtractionPipeline>((serviceProvider) =>
 {
     var pipe = new FeatureExtractionPipeline();
-    pipe.Load(new BandwidthExtractor());
-    pipe.Load(new MfccExtractor());
+    pipe.Load("MfccExtractor");
+    pipe.Load("BandwidthExtractor");
     return pipe;
-});
-
+}
+);
 
 switch (Path.GetExtension(savePath))
 {
@@ -80,15 +79,21 @@ switch (Path.GetExtension(savePath))
         throw new ArgumentException("Unsupported file type requested for result output. Please specify either json or csv");
 }
 
+services.AddLogging(loggerBuilder =>
+{
+    loggerBuilder
+        .AddFilter("AudioAnalyzer.Program", LogLevel.Information)
+        .AddConsole();
+});
+
 var serviceProvider = services.BuildServiceProvider();
+
 var context = serviceProvider.GetService<SongDbContext>();
 if (context != null) context.Database.Migrate();
 
 var controller = serviceProvider.GetRequiredService<AudioAnalyzerController>();
 var songs = controller.LoadSongs(args[0]);
-var watch = Stopwatch.StartNew();
 await controller.ProcessFeaturesAsync();
-Console.WriteLine(watch.ElapsedMilliseconds);
 
 switch (saveMode)
 {

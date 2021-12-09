@@ -12,25 +12,27 @@ public class MfccExtractor : IFeatureExtractor
 {
     /// <value> Property <c>NumMelBands</c> represents the number of mel-scaled frequency bins
     /// This dicates the number of mels used when constructing the mel-filter bank</value>
-    public int NumMelBands { get; set; }
+    public int NumMelBands { get; set; } = 13;
 
     /// <value> Property <c>NumMfccs</c> represents the number of mfccs to store 
     /// after discrete cosine transformation</value>
-    public int NumMfccs { get; set; }
+    public int NumMfccs { get; set; } = 64;
 
     /// <value> Property <c>LowerFrequencyBound</c> represents the lower frequency bound in Hz of 
     /// the mel-filter bank</value>
-    public double LowerFrequencyBound { get; set; }
+    public double LowerFrequencyBound { get; set; } = 300;
 
     /// <value> Property <c>LowerFrequencyBound</c> represents the lower frequency bound in Hz of 
     /// the mel-filter bank</value>
-    public double UpperFrequencyBound { get; set; }
+    public double UpperFrequencyBound { get; set; } = 10000;
 
     private int _cachedFilterLength;
     private double _cachedFrequencyStep;
     private Matrix<double> _cachedMelFilter = Matrix<double>.Build.Dense(0, 0);
 
     private readonly object _asyncProcessLock = new object();
+
+
     /// <summary>
     /// This constructor provides default values for the classes properties if not provided, based on generally 
     /// used audio processing parameters.

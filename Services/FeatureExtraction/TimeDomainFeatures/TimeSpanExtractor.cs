@@ -1,6 +1,6 @@
-using AudioAnalyzer.FeatureExtraction;
 using AudioAnalyzer.Services;
 
+namespace AudioAnalyzer.FeatureExtraction;
 public class TimeSpanExtractor : IFeatureExtractor
 {
     public Song ExtractFeature(Song song)
