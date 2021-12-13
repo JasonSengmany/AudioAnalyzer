@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using AudioAnalyzer.FeatureExtraction;
 using CsvHelper.Configuration.Attributes;
 
@@ -9,10 +10,11 @@ namespace AudioAnalyzer.Models;
 /// </summary>
 public record Song
 {
+    [Required]
     internal string FilePath { get; init; } = String.Empty;
 
     [FeatureExtractors(nameof(DirectoryLabelExtractor))]
-    public string Label { get; set; } = String.Empty;
+    public string? Label { get; set; }
 
     [FeatureExtractors(nameof(TimeSpanExtractor))]
     public double? TotalTime { get; set; }
@@ -47,7 +49,7 @@ public record Song
 
     [Optional]
     [FeatureExtractors(nameof(MfccExtractor))]
-    public double[] MFCC { get; set; } = new double[0];
+    public double[]? MFCC { get; set; }
 
     /// <summary>
     /// Used to pass variables between extractors

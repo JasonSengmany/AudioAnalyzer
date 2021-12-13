@@ -3,6 +3,7 @@ using System;
 using AudioAnalyzer.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AudioAnalyzer.Migrations
 {
     [DbContext(typeof(SongDbContext))]
-    partial class SongDbContextModelSnapshot : ModelSnapshot
+    [Migration("20211213020618_UpdatedModelOptionalLabel")]
+    partial class UpdatedModelOptionalLabel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.0");

@@ -57,6 +57,7 @@ services.AddSingleton<AudioAnalyzerController>();
 services.AddSingleton<FeatureExtractionPipeline>((serviceProvider) =>
 {
     var pipe = new FeatureExtractionPipeline();
+    pipe.Load("TimeSpanExtractor");
     pipe.Load("MfccExtractor");
     pipe.Load("BandwidthExtractor");
     return pipe;
@@ -90,11 +91,10 @@ var serviceProvider = services.BuildServiceProvider();
 
 var context = serviceProvider.GetService<SongDbContext>();
 if (context != null) context.Database.Migrate();
-
 var controller = serviceProvider.GetRequiredService<AudioAnalyzerController>();
+Console.WriteLine(string.Join(", ", controller.FeatureExtractionPipeline.GetCompleteFeatureExtractorNames()));
 var songs = controller.LoadSongs(args[0]);
 await controller.ProcessFeaturesAsync();
-
 switch (saveMode)
 {
     case (FileMode.Create):

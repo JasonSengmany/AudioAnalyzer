@@ -33,6 +33,7 @@ public abstract class PrerequisiteExtractor : IFeatureExtractor
         return song;
     }
 
+
     /// <summary>
     /// Method to be performed before executing dependent extractors
     /// </summary>
@@ -59,21 +60,21 @@ public abstract class PrerequisiteExtractor : IFeatureExtractor
     /// </summary>
     /// <param name="childExtractor"></param>
     /// <param name="prerequisites"></param>
-    /// <returns>true on success otherwise false if an extractor had failed to be loaded</returns>
-    internal bool AddChild(IFeatureExtractor childExtractor, Stack<string> prerequisites)
+    internal void AddChild(IFeatureExtractor childExtractor, Stack<string> prerequisites)
     {
+        if (ContainsType(childExtractor.GetType())) throw new FeaturePipelineException("Unable to load duplicate typed extractor");
         if (prerequisites.Count == 0)
         {
             AddChild(childExtractor);
-            return true;
+            return;
         }
         var parentPrerequisite = prerequisites.Pop();
         var parentPrerequisiteType = Type.GetType($"AudioAnalyzer.FeatureExtraction.{parentPrerequisite}");
-        if (parentPrerequisiteType is null) return false;
+        if (parentPrerequisiteType is null) throw new FeaturePipelineException("Unable to resolve prerequisite type");
         if (this.GetType().IsAssignableTo(parentPrerequisiteType))
         {
             AddChild(childExtractor);
-            return true;
+            return;
         }
         var parentFeaturizer = DependentExtractors.Where((featurizer) =>
         {
@@ -85,17 +86,22 @@ public abstract class PrerequisiteExtractor : IFeatureExtractor
             if (!parentPrerequisiteType.IsAbstract)
             {
                 var initialisedPrerequisite = Activator.CreateInstance(parentPrerequisiteType);
-                if (initialisedPrerequisite is null) return false;
+                if (initialisedPrerequisite is null) throw new FeaturePipelineException("Unable to initialize prerequisite");
                 ((PrerequisiteExtractor)initialisedPrerequisite).AddChild(childExtractor);
                 DependentExtractors.Add(((PrerequisiteExtractor)initialisedPrerequisite));
-                return true;
+                return;
             }
-            return false;
+            throw new FeaturePipelineException("Unable to initialize abstract extractor class");
         }
         else
         {
-            return ((PrerequisiteExtractor)parentFeaturizer).AddChild(childExtractor, prerequisites);
+            ((PrerequisiteExtractor)parentFeaturizer).AddChild(childExtractor, prerequisites);
         }
+    }
+
+    private bool ContainsType(Type childExtractorType)
+    {
+        return DependentExtractors.Where(extractor => extractor.GetType().IsAssignableTo(childExtractorType)).Any();
     }
 
     /// <summary>
@@ -107,5 +113,47 @@ public abstract class PrerequisiteExtractor : IFeatureExtractor
         DependentExtractors.Remove(childExtractor);
     }
 
+    public List<string> GetCompleteFeatureExtractorNames()
+    {
+        var names = new List<string>() { this.GetType().Name };
+        foreach (var extractor in DependentExtractors)
+        {
+            names.AddRange(extractor.GetCompleteFeatureExtractorNames());
+        }
+        return names;
+    }
 
+    public List<IFeatureExtractor> GetAllFeatureExtractors()
+    {
+        var extractors = new List<IFeatureExtractor>();
+        extractors.Add(this);
+        foreach (var extractor in DependentExtractors)
+        {
+            extractors.AddRange(extractor.GetAllFeatureExtractors());
+        }
+        return extractors;
+    }
+
+    internal bool RemoveChild(IFeatureExtractor featurizer, Stack<string> prerequisites)
+    {
+        if (ContainsType(featurizer.GetType()))
+        {
+            return DependentExtractors.Remove(featurizer);
+        }
+        if (!prerequisites.Any()) return false;
+        var nextPrerequisite = prerequisites.Pop();
+        var nextPrerequisiteType = Type.GetType($"AudioAnalyzer.FeatureExtraction.{nextPrerequisite}");
+        if (nextPrerequisiteType is null) throw new FeaturePipelineException("Unable to resolve prerequisite type");
+        var nextFeaturizer = DependentExtractors.Where((extractor) =>
+        {
+            return extractor.GetType().IsAssignableTo(nextPrerequisiteType);
+        }).FirstOrDefault();
+
+        if (nextFeaturizer is null)
+        {
+            return false;
+        }
+
+        return ((PrerequisiteExtractor)nextFeaturizer).RemoveChild(featurizer, prerequisites);
+    }
 }

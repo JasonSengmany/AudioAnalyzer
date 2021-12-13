@@ -1,20 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
 namespace AudioAnalyzer.Services;
-public class SongDbContext : DbContext
-{
-    public SongDbContext() { }
-    public SongDbContext(DbContextOptions<SongDbContext> options) : base(options) { }
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<Song>()
-            .HasKey(s => s.FilePath);
-        modelBuilder.Entity<Song>()
-            .Ignore(s => s.MFCC);
-    }
-    public DbSet<Song> Songs { get; set; }
-}
 
 public class SqlitePersistenceService : IPersistenceService
 {

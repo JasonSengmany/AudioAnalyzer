@@ -142,5 +142,4 @@ public class AudioAnalyzerController
         var songs = await _persistenceService.Load(path);
         Songs.AddRange(songs);
     }
-
 }
