@@ -1,0 +1,30 @@
+@using AudioAnalyzer.Models
+@inject AudioAnalyzerService AudioAnalyzerService
+@inject FeatureExtractorFormState FormState
+@implements IDisposable
+<label class="form-label">1. Select an audio file feature</label>
+<InputSelect class="form-select " @bind-Value="FormState.Feature">
+    @foreach (var feature in songFeatures)
+    {
+        <option value="@feature">@feature</option>
+    }
+</InputSelect>
+
+@code {
+    private List<string> songFeatures { get; set; } = new();
+
+    protected override Task OnInitializedAsync()
+    {
+        FormState.OnChange += StateHasChanged;
+        songFeatures = typeof(Song).GetProperties().Select(p => p.Name).ToList();
+        FormState.Feature = songFeatures.First();
+        return base.OnInitializedAsync();
+    }
+
+
+
+    public void Dispose()
+    {
+        FormState.OnChange -= StateHasChanged;
+    }
+}

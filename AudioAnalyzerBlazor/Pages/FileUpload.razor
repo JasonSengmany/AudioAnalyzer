@@ -1,0 +1,62 @@
+@inject AudioAnalyzerService AudioAnalyzerService
+@inject IWebHostEnvironment Environment
+@inject UploadedFilesState UploadedFileState
+@implements IDisposable
+<div class="drag-drop-zone">
+    <InputFile OnChange="@LoadFiles" multiple />
+    <label>Click here to add a file or drag and drop the file here</label>
+</div>
+
+@code {
+    private List<IBrowserFile> loadedFiles = new();
+    private List<string> savedFileNames = new();
+    private long maxFileSize = 40 * 1024 * 1024;
+    private int maxAllowedFiles = 3;
+    private bool isLoading;
+
+
+
+    protected override void OnInitialized()
+    {
+        UploadedFileState.OnChange += StateHasChanged;
+    }
+
+    private async Task LoadFiles(InputFileChangeEventArgs e)
+    {
+        isLoading = true;
+
+
+        foreach (var file in e.GetMultipleFiles(maxAllowedFiles))
+        {
+            try
+            {
+                loadedFiles.Add(file);
+
+                var trustedFileNameForFileStorage = $"{Path.GetRandomFileName()}{Path.GetExtension(file.Name)}";
+                var path = Path.Combine(Environment.ContentRootPath,
+                Environment.EnvironmentName, "unsafe_uploads",
+                trustedFileNameForFileStorage);
+
+                Console.WriteLine(path);
+
+                await using FileStream fs = new(path, FileMode.Create);
+                await file.OpenReadStream(maxFileSize).CopyToAsync(fs);
+                savedFileNames.Add(path);
+                AudioAnalyzerService.LoadSongs(path);
+                UploadedFileState.AddFile(new() { FileName = path, UnsafeFileName = file.Name });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine("Failed to save");
+            }
+        }
+
+        isLoading = false;
+    }
+
+    public void Dispose()
+    {
+        UploadedFileState.OnChange -= StateHasChanged;
+    }
+}

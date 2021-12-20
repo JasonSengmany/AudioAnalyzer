@@ -1,0 +1,84 @@
+@using AudioAnalyzer.Models
+@inject AudioAnalyzerService AudioAnalyzerService
+@inject IWebHostEnvironment Environment
+@inject UploadedFilesState UploadedFileState
+@inject IJSRuntime JS
+@implements IDisposable
+
+
+
+<button class="btn btn-primary" @onclick="ProcessSongs"
+    disabled="@(isProcessing || !UploadedFileState.UploadedFiles.Any())">Process</button>
+<button class="btn btn-secondary @(UploadedFileState.UploadedFiles.Any()?"visible":"invisible")"
+    @onclick="OnClearCallback" disabled="@isProcessing">Clear
+    Songs</button>
+
+<div @ref="spinnerPlaceholder" style="position:relative"></div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">File</th>
+            @foreach (var feature in typeof(Song).GetProperties())
+            {
+                if (AudioAnalyzerService.Songs.Any() && feature.GetValue(AudioAnalyzerService.Songs.First()) != null)
+                {
+                    <th scope="col">@feature.Name</th>
+                }
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var song in AudioAnalyzerService.Songs)
+        {
+
+            <tr>
+                <th scope="row">
+                    @UploadedFileState.UploadedFiles.ElementAt(AudioAnalyzerService.Songs.IndexOf(song)).UnsafeFileName
+                </th>
+                @foreach (var feature in typeof(Song).GetProperties())
+                {
+                    var value = feature.GetValue(song);
+                    if (value != null)
+                    {
+                        <td>@value</td>
+                    }
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter]
+    public EventCallback<MouseEventArgs> OnClearCallback { get; set; }
+    private long maxFileSize = 40 * 1024 * 1024;
+    private int maxAllowedFiles = 3;
+    private bool isLoading;
+    private bool isProcessing = false;
+    private ElementReference spinnerPlaceholder;
+
+
+
+    protected override void OnInitialized()
+    {
+        UploadedFileState.OnChange += StateHasChanged;
+    }
+
+    private async Task ProcessSongs()
+    {
+        isProcessing = true;
+        await JS.InvokeVoidAsync("startSpinner", spinnerPlaceholder);
+        await AudioAnalyzerService.ProcessFeaturesAsync();
+        await JS.InvokeVoidAsync("stopSpinner", spinnerPlaceholder);
+        isProcessing = false;
+    }
+
+
+
+    public void Dispose()
+    {
+
+        UploadedFileState.OnChange -= StateHasChanged;
+    }
+}

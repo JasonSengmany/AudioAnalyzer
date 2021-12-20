@@ -1,0 +1,37 @@
+@page "/process"
+@using Microsoft.AspNetCore.Components.Server.Circuits
+@inject UploadedFilesState UploadedFileState
+@inject AudioAnalyzerService AudioAnalyzerService
+@inject IJSRuntime JS
+@inject CircuitHandler CircuitHandlerService
+@implements IDisposable
+
+<h3 class="h3 text-start">Upload Files</h3>
+<FileUpload />
+<FileProcess OnClearCallback="@ClearUploads" />
+
+@code {
+    protected override void OnInitialized()
+    {
+        (CircuitHandlerService as CircuitHandlerService).OnCloseEvents += ClearUploads;
+    }
+
+
+    [JSInvokable]
+    public void ClearUploads()
+    {
+        foreach (var upload in UploadedFileState.UploadedFiles)
+        {
+            File.Delete(upload.FileName);
+
+        }
+        AudioAnalyzerService.ClearSongs();
+        UploadedFileState.UploadedFiles.Clear();
+    }
+
+    public void Dispose()
+    {
+        (CircuitHandlerService as CircuitHandlerService).OnCloseEvents -= ClearUploads;
+    }
+
+}

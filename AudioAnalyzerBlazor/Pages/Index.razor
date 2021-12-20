@@ -1,0 +1,70 @@
+﻿@page "/"
+@inject AudioAnalyzerService AudioAnalyzerService
+@inject FeatureExtractorFormState FormState
+
+<h3 class="h3 text-start">Feature Extraction Pipeline Contruction</h3>
+<PageTitle>Audio Analyzer</PageTitle>
+<EditForm Model=FormState OnSubmit=LoadExtractor>
+    <div class="container">
+        <div class="row mb-3">
+            <div class="col-md-3 ">
+                <FeatureSelection />
+            </div>
+            <div class="col-md-3">
+                <ExtractorSelection />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-sm-2 mx-auto">
+                <button class="btn btn-primary" type="submit">Load Extractor</button>
+            </div>
+            <div class="col-sm my-auto">
+                <p class="text-danger text-sm-start my-auto">@errorMessage</p>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@if (AudioAnalyzerService.FeatureExtractionPipeline.Featurizers.Any())
+{
+    <label class="h6"><strong>Loaded Feature Extractors</strong></label>
+    @if (AudioAnalyzerService.FeatureExtractionPipeline.Featurizers.Any())
+    {
+        <button class="btn btn-danger btn-sm ms-2 mb-1" @onclick="ResetPipeline">Reset</button>
+    }
+    <ol class="list-group">
+        @foreach (var extractor in AudioAnalyzerService.FeatureExtractionPipeline.GetAllFeatureExtractors())
+        {
+            <li class="list-group-item">
+
+                @extractor.GetType().Name
+                <a @onclick="@(() => AudioAnalyzerService.FeatureExtractionPipeline.Remove(extractor))"
+            class="delete-item">x</a>
+            </li>
+        }
+    </ol>
+}
+
+
+@code {
+    private string errorMessage = String.Empty;
+    private void LoadExtractor()
+    {
+        Console.WriteLine($"Loading {FormState.Extractor} for {FormState.Feature}");
+        if (!AudioAnalyzerService.FeatureExtractionPipeline.TryLoad(FormState.Extractor))
+        {
+            errorMessage = $"Unable to load additional extractor for {FormState.Feature}";
+        }
+        else
+        {
+            errorMessage = String.Empty;
+        }
+    }
+    private void ResetPipeline()
+    {
+        AudioAnalyzerService.FeatureExtractionPipeline.Clear();
+        errorMessage = string.Empty;
+    }
+
+}

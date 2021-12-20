@@ -1,0 +1,42 @@
+@using AudioAnalyzer.FeatureExtraction
+@using AudioAnalyzer.Models
+@inject FeatureExtractorFormState FormState
+@implements IDisposable
+
+<label class="form-label">2. Select an extractor</label>
+<InputSelect class="form-select" @bind-Value="FormState.Extractor">
+    @foreach (var extractor in extractors)
+    {
+        <option value="@extractor">@extractor</option>
+    }
+</InputSelect>
+@code {
+
+    private List<string> extractors { get; set; } = new();
+    protected override void OnInitialized()
+    {
+        FormState.OnChange += StateHasChanged;
+        FormState.OnChange += UpdateAvailableExtractors;
+        UpdateAvailableExtractors();
+    }
+
+    public void UpdateAvailableExtractors()
+    {
+        var propertyInfo = typeof(Song).GetProperty(FormState.Feature);
+        if (propertyInfo is null)
+        {
+            return;
+        }
+        var attr = (FeatureExtractorsAttribute)Attribute.GetCustomAttribute(propertyInfo, typeof(FeatureExtractorsAttribute));
+        extractors = attr.PossibleFeatureExtractors;
+        FormState.Extractor = extractors.First();
+    }
+
+
+    public void Dispose()
+    {
+        FormState.OnChange -= StateHasChanged;
+        FormState.OnChange -= UpdateAvailableExtractors;
+    }
+
+}
