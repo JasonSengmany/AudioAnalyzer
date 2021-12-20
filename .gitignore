@@ -460,5 +460,8 @@ music/**
 *.png
 
 Data/**
+*.wav
+*.flac
+*.mp3
 *.csv
 results.json
