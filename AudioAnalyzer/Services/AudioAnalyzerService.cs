@@ -96,7 +96,7 @@ public class AudioAnalyzerService
     /// asynchronously
     /// </summary>
     /// <returns></returns>
-    public async Task<List<Song>> ProcessFeaturesAsync()
+    public async Task<List<Song>> ProcessFeaturesAsync(CancellationToken cancellationToken = default)
     {
         var watch = Stopwatch.StartNew();
         var taskList = new List<Task>();
@@ -104,8 +104,8 @@ public class AudioAnalyzerService
         {
             taskList.Add(Task.Run(async () =>
               {
-                  await FeatureExtractionPipeline.ProcessAsync(song);
-              }));
+                  await FeatureExtractionPipeline.ProcessAsync(song, cancellationToken);
+              }, cancellationToken));
         }
         await Task.WhenAll(taskList);
         _logger.LogInformation($"Processing completed in {watch.ElapsedMilliseconds} ms");

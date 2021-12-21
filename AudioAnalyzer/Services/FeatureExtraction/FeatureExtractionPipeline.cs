@@ -172,13 +172,13 @@ public class FeatureExtractionPipeline
         return song;
     }
 
-    public async Task<Song> ProcessAsync(Song song)
+    public async Task<Song> ProcessAsync(Song song, CancellationToken cancellationToken = default)
     {
         if (Featurizers.Count == 0) return song;
         var taskList = new List<Task<Song>>();
         foreach (var featurizer in Featurizers)
         {
-            taskList.Add(Task.Run(() => featurizer.ExtractFeature(song)));
+            taskList.Add(Task.Run(() => featurizer.ExtractFeature(song), cancellationToken));
         }
         return (await Task.WhenAll<Song>(taskList)).First();
     }
