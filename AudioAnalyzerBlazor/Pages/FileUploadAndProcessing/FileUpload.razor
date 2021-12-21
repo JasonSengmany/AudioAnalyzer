@@ -1,20 +1,18 @@
 @inject AudioAnalyzerService AudioAnalyzerService
 @inject IWebHostEnvironment Environment
 @inject UploadedFilesState UploadedFileState
+@inject ILogger<FileUpload> logger
 @implements IDisposable
+
 <div class="drag-drop-zone">
     <InputFile OnChange="@LoadFiles" multiple />
     <label>Click here to add a file or drag and drop the file here</label>
 </div>
 
 @code {
-    private List<IBrowserFile> loadedFiles = new();
-    private List<string> savedFileNames = new();
+    private string cachedUploadedFileName = String.Empty; // To allow clean-up of partially copied files.
     private long maxFileSize = 40 * 1024 * 1024;
-    private int maxAllowedFiles = 3;
-    private bool isLoading;
-
-
+    private int maxAllowedFiles = 20;
 
     protected override void OnInitialized()
     {
@@ -23,36 +21,39 @@
 
     private async Task LoadFiles(InputFileChangeEventArgs e)
     {
-        isLoading = true;
-
-
         foreach (var file in e.GetMultipleFiles(maxAllowedFiles))
         {
             try
             {
-                loadedFiles.Add(file);
-
                 var trustedFileNameForFileStorage = $"{Path.GetRandomFileName()}{Path.GetExtension(file.Name)}";
                 var path = Path.Combine(Environment.ContentRootPath,
                 Environment.EnvironmentName, "unsafe_uploads",
                 trustedFileNameForFileStorage);
-
-                Console.WriteLine(path);
-
+                logger.LogInformation($"Uploading file: {path}");
                 await using FileStream fs = new(path, FileMode.Create);
+                cachedUploadedFileName = path;
                 await file.OpenReadStream(maxFileSize).CopyToAsync(fs);
-                savedFileNames.Add(path);
+
                 AudioAnalyzerService.LoadSongs(path);
                 UploadedFileState.AddFile(new() { FileName = path, UnsafeFileName = file.Name });
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine(ex.Message);
-                Console.WriteLine("Failed to save");
+                logger.LogWarning($"Exception has occurred during file upload. All uploads will be cleared.");
+                // Clean up all loaded files if exception had occurred to prevent inconsistent state.
+                foreach (var upload in UploadedFileState.UploadedFiles)
+                {
+                    File.Delete(upload.FileName);
+                }
+                File.Delete(cachedUploadedFileName);
+                UploadedFileState.UploadedFiles.Clear();
+                AudioAnalyzerService.Songs.Clear();
+            }
+            finally
+            {
+                cachedUploadedFileName = String.Empty;
             }
         }
-
-        isLoading = false;
     }
 
     public void Dispose()

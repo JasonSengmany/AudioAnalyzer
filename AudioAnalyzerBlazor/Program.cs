@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using AudioAnalyzerBlazor.Data;
 using AudioAnalyzer.FeatureExtraction;
 using AudioAnalyzer.Services;

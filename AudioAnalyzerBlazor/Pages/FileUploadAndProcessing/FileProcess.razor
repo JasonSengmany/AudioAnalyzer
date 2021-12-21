@@ -3,6 +3,7 @@
 @inject IWebHostEnvironment Environment
 @inject UploadedFilesState UploadedFileState
 @inject IJSRuntime JS
+@inject ILogger<FileProcess> logger
 @implements IDisposable
 
 
@@ -14,7 +15,10 @@
     Songs</button>
 
 <div @ref="spinnerPlaceholder" style="position:relative"></div>
-
+@if (isProcessing)
+{
+    <p>Please do not navigate away until processing has completed. It may be suspended if interrupted.</p>
+}
 <table class="table">
     <thead>
         <tr>
@@ -52,13 +56,10 @@
 @code {
     [Parameter]
     public EventCallback<MouseEventArgs> OnClearCallback { get; set; }
-    private long maxFileSize = 40 * 1024 * 1024;
-    private int maxAllowedFiles = 3;
-    private bool isLoading;
     private bool isProcessing = false;
     private ElementReference spinnerPlaceholder;
 
-
+    private CancellationTokenSource cts = new CancellationTokenSource();
 
     protected override void OnInitialized()
     {
@@ -68,9 +69,18 @@
     private async Task ProcessSongs()
     {
         isProcessing = true;
-        await JS.InvokeVoidAsync("startSpinner", spinnerPlaceholder);
-        await AudioAnalyzerService.ProcessFeaturesAsync();
-        await JS.InvokeVoidAsync("stopSpinner", spinnerPlaceholder);
+        try
+        {
+            await JS.InvokeVoidAsync("startSpinner", spinnerPlaceholder);
+            await AudioAnalyzerService.ProcessFeaturesAsync(cts.Token);
+            await JS.InvokeVoidAsync("stopSpinner", spinnerPlaceholder);
+        }
+        catch
+        {
+            logger.LogWarning("Exception has occurred during processing. The page was likely closed prematurely");
+            isProcessing = false;
+        }
+
         isProcessing = false;
     }
 
@@ -80,5 +90,8 @@
     {
 
         UploadedFileState.OnChange -= StateHasChanged;
+        // Triggered when user navigates away or closes browser/tab. Any processing still running is cancelled.
+        cts.Cancel();
+        cts.Dispose();
     }
 }

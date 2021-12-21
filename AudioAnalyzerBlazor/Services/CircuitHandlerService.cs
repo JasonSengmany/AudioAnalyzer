@@ -7,10 +7,12 @@ public class CircuitHandlerService : CircuitHandler
 {
     public ConcurrentDictionary<string, Circuit> Circuits { get; set; }
 
-    public event Action? OnCloseEvents;
-    public CircuitHandlerService()
+    private readonly UploadedFilesState _uploadedFileState;
+
+    public CircuitHandlerService(UploadedFilesState uploadedFilesState)
     {
         Circuits = new ConcurrentDictionary<string, Circuit>();
+        _uploadedFileState = uploadedFilesState;
     }
 
     public override Task OnCircuitOpenedAsync(Circuit circuit, CancellationToken cancellationToken)
@@ -22,14 +24,34 @@ public class CircuitHandlerService : CircuitHandler
     public override Task OnCircuitClosedAsync(Circuit circuit, CancellationToken cancellationToken)
     {
         Circuit circuitRemoved;
-        OnCloseEvents?.Invoke();
+        Console.WriteLine("Circuit closed");
+        foreach (var upload in _uploadedFileState.UploadedFiles)
+        {
+            while (true)
+            {
+                try
+                {
+                    File.Delete(upload.FileName);
+                    break;
+                }
+                catch (DirectoryNotFoundException e)
+                {
+                    Console.WriteLine(e);
+                    break;
+                }
+                catch
+                {
+                    continue;
+                }
+            }
+        }
         Circuits.TryRemove(circuit.Id, out circuitRemoved);
         return base.OnCircuitClosedAsync(circuit, cancellationToken);
     }
 
     public override Task OnConnectionDownAsync(Circuit circuit, CancellationToken cancellationToken)
     {
-        OnCloseEvents?.Invoke();
+        Console.WriteLine("Circuit connection down");
         return base.OnConnectionDownAsync(circuit, cancellationToken);
     }
 

@@ -4,7 +4,7 @@ public class UploadResult
     public string FileName { get; set; } = default!;
     public string UnsafeFileName { get; set; } = default!;
 }
-internal class UploadedFilesState
+public class UploadedFilesState
 {
     public List<UploadResult> UploadedFiles { get; init; } = new();
 
